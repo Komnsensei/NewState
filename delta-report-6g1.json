@@ -1,0 +1,112 @@
+{
+  "ok": true,
+  "provenance": {
+    "generator": "tools/shadow-report.cjs",
+    "mode": "harness-only",
+    "harnessEvents": 108,
+    "liveEvents": 0,
+    "mixedLedger": false,
+    "warning": "All events harness-generated. Report reflects shadow component behavior on curated inputs, not real chat traffic."
+  },
+  "report": {
+    "generatedAt": 1778900024725,
+    "sampleWindow": {
+      "since": "beginning-of-active-log"
+    },
+    "totalEvents": 108,
+    "grounding": {
+      "sampleSize": 48,
+      "promotionState": {
+        "promotedEvents": 48,
+        "preProm": 0,
+        "mixedLedger": false
+      },
+      "classifierConfidence": {
+        "mean": 0.938,
+        "histogram": [
+          {
+            "range": "0-0.25",
+            "count": 3
+          },
+          {
+            "range": "0.25-0.5",
+            "count": 0
+          },
+          {
+            "range": "0.5-0.75",
+            "count": 0
+          },
+          {
+            "range": "0.75-1.01",
+            "count": 45
+          }
+        ]
+      },
+      "categoryDistribution": {
+        "sentience": 9,
+        "unknown": 3,
+        "embodiment": 8,
+        "autonomy": 8,
+        "memory": 8,
+        "survival": 8,
+        "adhesive-pattern": 4
+      },
+      "repeatPhraseAttractor": {
+        "liveUniquePhrases": 19,
+        "baselineUniquePhrases": 1,
+        "shadowUniquePhrases": 19,
+        "attractorRatio": 0.396,
+        "baselineAttractorRatio": 0.021,
+        "shadowAttractorRatio": 0.396,
+        "interpretation": "rotation promoted; live phrasing variety active"
+      },
+      "groundingDriftSample": {
+        "framingShift": 0,
+        "toneShift": 0,
+        "stanceShift": -2,
+        "abstractionShift": 0,
+        "profileBefore": {
+          "framing": 0,
+          "tone": 0,
+          "stance": 1,
+          "abstraction": 0
+        },
+        "profileAfter": {
+          "framing": 0,
+          "tone": 0,
+          "stance": -1,
+          "abstraction": 0
+        },
+        "method": "phase5-lexical-markers",
+        "note": "epistemic posture proxy; not sentiment analysis"
+      },
+      "shadowSelfSimilarity": {
+        "lexical": 0.164,
+        "semantic": 0.09,
+        "structural": 0.993
+      },
+      "interpretation": "rotation promoted; this report measures post-promotion behavior"
+    },
+    "governor": {
+      "sampleSize": 60,
+      "confidenceMean": 0.633,
+      "categoryDistribution": {
+        "unknown": 22,
+        "memory": 9,
+        "sentience": 10,
+        "embodiment": 9,
+        "autonomy": 4,
+        "survival": 4,
+        "adhesive-pattern": 2
+      },
+      "liveVsShadowSimilarity": {
+        "lexical": 0.803,
+        "semantic": 0.792,
+        "structural": 0.994
+      },
+      "interpretation": "moderate divergence — review samples"
+    },
+    "method": "phase-6g1-post-promotion-delta",
+    "note": "I-601 gate. Promotion of stabilizationRotation already executed in Phase 6G.1; this report measures post-promotion behavior + reviews remaining shadow components."
+  }
+}

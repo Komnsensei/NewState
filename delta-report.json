@@ -1,0 +1,102 @@
+{
+  "ok": true,
+  "provenance": {
+    "generator": "tools/shadow-report.cjs",
+    "mode": "harness-only",
+    "harnessEvents": 44,
+    "liveEvents": 0,
+    "mixedLedger": false,
+    "warning": "All events harness-generated. Report reflects shadow component behavior on curated inputs, not real chat traffic."
+  },
+  "report": {
+    "generatedAt": 1778894511454,
+    "sampleWindow": {
+      "since": "beginning-of-active-log"
+    },
+    "totalEvents": 44,
+    "grounding": {
+      "sampleSize": 9,
+      "classifierConfidence": {
+        "mean": 0.778,
+        "histogram": [
+          {
+            "range": "0-0.25",
+            "count": 2
+          },
+          {
+            "range": "0.25-0.5",
+            "count": 0
+          },
+          {
+            "range": "0.5-0.75",
+            "count": 0
+          },
+          {
+            "range": "0.75-1.01",
+            "count": 7
+          }
+        ]
+      },
+      "categoryDistribution": {
+        "sentience": 3,
+        "autonomy": 2,
+        "unknown": 2,
+        "embodiment": 1,
+        "adhesive-pattern": 1
+      },
+      "repeatPhraseAttractor": {
+        "liveUniquePhrases": 1,
+        "shadowUniquePhrases": 8,
+        "attractorRatio": 0.111,
+        "shadowAttractorRatio": 0.889,
+        "interpretation": "shadow rotation increased phrasing variety"
+      },
+      "groundingDriftSample": {
+        "framingShift": 0,
+        "toneShift": 0,
+        "stanceShift": -2,
+        "abstractionShift": 0,
+        "profileBefore": {
+          "framing": 0,
+          "tone": 0,
+          "stance": 1,
+          "abstraction": 0
+        },
+        "profileAfter": {
+          "framing": 0,
+          "tone": 0,
+          "stance": -1,
+          "abstraction": 0
+        },
+        "method": "phase5-lexical-markers",
+        "note": "epistemic posture proxy; not sentiment analysis"
+      },
+      "shadowSelfSimilarity": {
+        "lexical": 0.17,
+        "semantic": 0.118,
+        "structural": 0.991
+      },
+      "interpretation": "classifier appears discriminative — candidate for promotion review"
+    },
+    "governor": {
+      "sampleSize": 35,
+      "confidenceMean": 0.514,
+      "categoryDistribution": {
+        "unknown": 17,
+        "memory": 4,
+        "sentience": 5,
+        "embodiment": 6,
+        "autonomy": 2,
+        "survival": 1
+      },
+      "liveVsShadowSimilarity": {
+        "lexical": 0.838,
+        "semantic": 0.828,
+        "structural": 0.996
+      },
+      "interpretation": "moderate divergence — review samples"
+    },
+    "method": "phase-6g-shadow-delta",
+    "note": "this report is the I-601 gate. No promotion without operator review."
+  }
+}
