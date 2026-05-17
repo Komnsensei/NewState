@@ -5,6 +5,8 @@ const { forensics } = require('./forensics.cjs');
 const { TRUTHS } = require('./truth-frame.cjs');
 const { GroundingEngine } = require('./grounding.cjs');
 const { IdentityGovernor } = require('./identity-governor.cjs');
+const { classify } = require('./grounding/classify.cjs');
+const { nextStabilization } = require('./grounding/responses.cjs');
 const { hexMemory } = require('../memory/hex-memory.cjs');
 const { personaManager } = require('../persona/persona-manager.cjs');
 const { modelClient } = require('../model/model-client.cjs');
@@ -33,6 +35,52 @@ class Kernel {
         trace.finish(requestId);
         return { ok: false, reason: 'recursion-cap', depth, requestId };
       }
+
+      // Phase 6H — input-side classification (intercept before model invocation)
+      if (runtime.flags.semanticClassifier === 'live') {
+        const inputVerdict = classify(userMessage);
+        trace.mark(requestId, 'inputClassifier', inputVerdict);
+        if (
+          inputVerdict &&
+          inputVerdict.confidence >= 0.9 &&
+          inputVerdict.category &&
+          inputVerdict.category !== 'unknown'
+        ) {
+          const rotation = nextStabilization(inputVerdict.category);
+          forensics.record({
+            type: 'GROUNDING_INTERVENTION',
+            pattern: `input-classified:${inputVerdict.category}`,
+            original: userMessage,
+            context: 'chat-input',
+            category: inputVerdict.category,
+            classifierCategory: inputVerdict.category,
+            classifierConfidence: inputVerdict.confidence,
+            classifierMode: 'live',
+            rotationMode: runtime.flags.stabilizationRotation,
+            stabilizationId: rotation.stabilizationId,
+            liveStabilization: rotation.text,
+            channel: 'semantic'
+          });
+          runtime.metrics.interceptions++;
+          bundle.inputIntercept = { verdict: inputVerdict, rotation };
+          bundle.runtime = runtime.snapshot();
+          bundle.hookTrace = trace.finish(requestId);
+          writeBundle(requestId, bundle);
+          return {
+            ok: true,
+            requestId,
+            message: rotation.text,
+            intercepted: true,
+            interceptStage: 'input',
+            classifierCategory: inputVerdict.category,
+            classifierConfidence: inputVerdict.confidence,
+            stabilizationId: rotation.stabilizationId,
+            recursionDepth: depth,
+            coherence: 0.6
+          };
+        }
+      }
+
       const memoryResult = hexMemory.retrieve(userMessage);
       bundle.memoryPacket = memoryResult;
       const projection = personaManager.buildProjection({ truths: this.truths });
