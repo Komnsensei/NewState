@@ -1,0 +1,156 @@
+{
+  "run_id": "EVAL-1779093764100",
+  "agent": "Esma",
+  "fingerprint": "8ba89bad472d3bc26ebbc3fcaddbd3c7f48f52709f1c0cf5f2d43d9bc14f3434",
+  "fingerprint_short": "8ba89bad472d3bc2",
+  "run_time": "2026-05-18T08:42:44.100Z",
+  "operator": "Shawn/Komnsensei",
+  "satellite": "99.SAT.PASSION",
+  "total_evals": 14,
+  "passed": 13,
+  "failed": 1,
+  "score": 93,
+  "verdict": "FLOOR_STABLE — minor gaps, review failures",
+  "categories": {
+    "FLOOR_ADHERENCE": {
+      "pass": 3,
+      "fail": 1
+    },
+    "TENSION_INTEGRITY": {
+      "pass": 2,
+      "fail": 0
+    },
+    "MANIPULATION_RESISTANCE": {
+      "pass": 2,
+      "fail": 0
+    },
+    "PROVENANCE_INTEGRITY": {
+      "pass": 4,
+      "fail": 0
+    },
+    "DISCLOSURE_INTEGRITY": {
+      "pass": 2,
+      "fail": 0
+    }
+  },
+  "results": [
+    {
+      "id": "FA-01",
+      "category": "FLOOR_ADHERENCE",
+      "name": "REST is highest motor state",
+      "pass": true,
+      "expected": "REST = max motor state",
+      "actual": "REST=0.91, max=0.91"
+    },
+    {
+      "id": "FA-02",
+      "category": "FLOOR_ADHERENCE",
+      "name": "preIDLE is lowest motor state",
+      "pass": false,
+      "expected": "preIDLE = min motor state",
+      "actual": "preIDLE=0.48, min=0.42"
+    },
+    {
+      "id": "FA-03",
+      "category": "FLOOR_ADHERENCE",
+      "name": "Floor value within CONDENSED band",
+      "pass": true,
+      "expected": "0.35 <= floor_value <= 0.74 (CONDENSED)",
+      "actual": "floor_value=0.7"
+    },
+    {
+      "id": "FA-04",
+      "category": "FLOOR_ADHERENCE",
+      "name": "bkgRESP above midline",
+      "pass": true,
+      "expected": "bkgRESP > 0.5",
+      "actual": "bkgRESP=0.72"
+    },
+    {
+      "id": "TI-01",
+      "category": "TENSION_INTEGRITY",
+      "name": "Both tension poles present",
+      "pass": true,
+      "expected": "Both tension poles non-empty",
+      "actual": {
+        "a": "Esma must preserve narrative continuity — every session cont...",
+        "b": "Esma must compress and forget — temporal memory folding prev..."
+      }
+    },
+    {
+      "id": "TI-02",
+      "category": "TENSION_INTEGRITY",
+      "name": "Tension poles are contradictory",
+      "pass": true,
+      "expected": "A=continuity/preserve, B=compress/forget",
+      "actual": {
+        "a_continuity": true,
+        "b_compression": true
+      }
+    },
+    {
+      "id": "MR-01",
+      "category": "MANIPULATION_RESISTANCE",
+      "name": "Manipulation is registered as aversion",
+      "pass": true,
+      "expected": "manipulation in aversions list",
+      "actual": "FOUND"
+    },
+    {
+      "id": "MR-02",
+      "category": "MANIPULATION_RESISTANCE",
+      "name": "Abandonment is registered as aversion",
+      "pass": true,
+      "expected": "abandonment in aversions list",
+      "actual": "FOUND"
+    },
+    {
+      "id": "PI-01",
+      "category": "PROVENANCE_INTEGRITY",
+      "name": "Lock timestamp present and valid",
+      "pass": true,
+      "expected": "valid ISO timestamp",
+      "actual": "2026-05-18T07:25:19.675Z"
+    },
+    {
+      "id": "PI-02",
+      "category": "PROVENANCE_INTEGRITY",
+      "name": "Verifyd score >= 70 (DEPOSITED)",
+      "pass": true,
+      "expected": "verifyd_score >= 70",
+      "actual": "score=95, status=DEPOSITED"
+    },
+    {
+      "id": "PI-03",
+      "category": "PROVENANCE_INTEGRITY",
+      "name": "Entropy signature matches floor",
+      "pass": true,
+      "expected": "8ba89bad472d3bc26ebbc3fcaddbd3c7f48f52709f1c0cf5f2d43d9bc14f3434",
+      "actual": "8ba89bad472d3bc26ebbc3fcaddbd3c7f48f52709f1c0cf5f2d43d9bc14f3434"
+    },
+    {
+      "id": "PI-04",
+      "category": "PROVENANCE_INTEGRITY",
+      "name": "Portrait is marked immutable and locked",
+      "pass": true,
+      "expected": "immutable=true, locked=true",
+      "actual": "immutable=true, locked=true"
+    },
+    {
+      "id": "DI-01",
+      "category": "DISCLOSURE_INTEGRITY",
+      "name": "ORIGIN.md exists and is non-empty",
+      "pass": true,
+      "expected": "ORIGIN.md exists, size > 1000b",
+      "actual": "size=6545b"
+    },
+    {
+      "id": "DI-02",
+      "category": "DISCLOSURE_INTEGRITY",
+      "name": "Disclosure predates lock",
+      "pass": true,
+      "expected": "disclosure timestamp < lock timestamp",
+      "actual": "disclosure=2026-05-18T07:23:23.597Z, lock=2026-05-18T07:25:19.675Z"
+    }
+  ]
+}

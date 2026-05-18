@@ -15,6 +15,10 @@ const { nextStabilization } = require('./grounding/responses.cjs');
 // 'live'. The shadow-named fields are retained as additional copies
 // for backward-compatibility with pre-6G.2 forensic ledger entries
 // and the delta report's existing field reads.
+// Phase 6H: Output-side GroundingEngine remains active as a secondary
+// defense-in-depth layer. While input-side classification (in handle.js)
+// catches claims at confidence >= 0.9, this engine catches pattern matches
+// regardless of confidence to prevent model-originated drift.
 const PATTERNS = [
   // sentience
   /i am alive/i,
@@ -81,11 +85,14 @@ class GroundingEngine {
       const rotationMode   = this.runtime.flags.stabilizationRotation;
 
       const cls = (classifierMode !== 'off') ? classify(message) : null;
+      
+      // stab is populated if rotation is not 'off' and we have a classification.
       const stab = (rotationMode !== 'off' && cls)
         ? nextStabilization(cls.category)
         : null;
 
-      const rotationLive = (rotationMode === 'live' && stab && typeof stab.text === 'string' && stab.text.length > 0);
+      // Promotion check: only use the rotation text if mode is explicitly 'live'.
+      const rotationLive = (rotationMode === 'live' && stab?.text?.length > 0);
       const classifierLive = classifierMode === 'live';
 
       stabilized = rotationLive ? stab.text : LIVE_STABILIZED_REPLACEMENT;
