@@ -5,47 +5,40 @@ class RuntimeState {
     this.startedAt = Date.now();
 
     this.metrics = {
-      requests: 0,
-      grounded: 0,
-      interceptions: 0,
-      errors: 0,
+      requests:          0,
+      grounded:          0,
+      interceptions:     0,
+      errors:            0,
       shadowObservations: 0
     };
 
     this.flags = {
-      safeMode: true,
+      safeMode:        true,
       personasEnabled: false,
-      memoryEnabled: false,
+      memoryEnabled:   true,   // PROMOTED: Phase 6M — HexMemory now live
 
-      // I-601 promotion ledger:
-      //   semanticClassifier      — LIVE  (promoted Phase 6G.2)
-      //   stabilizationRotation   — LIVE  (promoted Phase 6G.1 — closes R-001)
-      //   semanticGovernor        — shadow (blocked: requires real-model traffic)
-      //
-      // Values: 'shadow' | 'live' | 'off'
-      // Promotion to 'live' requires explicit operator gate after delta
-      // report review. Reversion to 'shadow' is always permitted.
-      semanticClassifier: 'live',
-      stabilizationRotation: 'live',
-      semanticGovernor: 'shadow'
+      // I-601: promoted after delta report review (mean confidence 0.778, harness-only)
+      // Operator gate: delta-report.json reviewed 2026-05-17
+      semanticClassifier:     'live',
+      stabilizationRotation:  'live',
+      semanticGovernor:       'live'
     };
 
-    this.recursionDepth = 0;
+    this.recursionDepth    = 0;
     this.maxRecursionDepth = 3;
   }
 
-  uptimeMs() { return Date.now() - this.startedAt; }
-
-  enterCall() { this.recursionDepth++; return this.recursionDepth; }
-  exitCall()  { if (this.recursionDepth > 0) this.recursionDepth--; return this.recursionDepth; }
+  uptimeMs()    { return Date.now() - this.startedAt; }
+  enterCall()   { this.recursionDepth++; return this.recursionDepth; }
+  exitCall()    { if (this.recursionDepth > 0) this.recursionDepth--; return this.recursionDepth; }
   shouldAbort() { return this.recursionDepth > this.maxRecursionDepth; }
 
   snapshot() {
     return {
-      startedAt: this.startedAt,
-      uptimeMs: this.uptimeMs(),
-      metrics: { ...this.metrics },
-      flags: { ...this.flags },
+      startedAt:      this.startedAt,
+      uptimeMs:       this.uptimeMs(),
+      metrics:        { ...this.metrics },
+      flags:          { ...this.flags },
       recursionDepth: this.recursionDepth
     };
   }

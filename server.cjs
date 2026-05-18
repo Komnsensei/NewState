@@ -2,36 +2,64 @@
 
 require('dotenv').config();
 
-const express = require('express');
-const cors = require('cors');
-const { runtime } = require('./kernel/runtime-state.cjs');
+const express    = require('express');
+const cors       = require('cors');
+const { runtime }   = require('./kernel/runtime-state.cjs');
 const { forensics } = require('./kernel/forensics.cjs');
-const chatRoutes = require('./routes/chat-routes.cjs');
+const chatRoutes    = require('./routes/chat-routes.cjs');
+const { hexMemory } = require('./memory/hex-memory.cjs');
+const { telegramBot } = require('./integrations/telegram.cjs');
 
 if (!process.env.GEMINI_API_KEY) {
-  console.error('[openkraft-rev2] FATAL: GEMINI_API_KEY not set in environment.');
-  console.error('[openkraft-rev2] Add it to .env. Refusing to start.');
+  console.error('[NEWSTATE] FATAL: GEMINI_API_KEY not set. Refusing to start.');
   process.exit(2);
 }
 
 const app = express();
 app.use(cors());
+
+// ngrok browser-warning bypass — Telegram needs this to reach the webhook
+app.use((_req, res, next) => {
+  res.setHeader('ngrok-skip-browser-warning', '1');
+  next();
+});
+
 app.use(express.json({ limit: '256kb' }));
 app.use('/', chatRoutes);
 
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-  console.log(`[openkraft-rev2] listening on :${PORT}`);
-  console.log(`[openkraft-rev2] provider=gemini model=${process.env.GEMINI_MODEL || 'gemini-1.5-flash'}`);
-  console.log(`[openkraft-rev2] safeMode=${runtime.flags.safeMode} personas=${runtime.flags.personasEnabled} memory=${runtime.flags.memoryEnabled}`);
-  console.log(`[openkraft-rev2] shadow flags: classifier=${runtime.flags.semanticClassifier} rotation=${runtime.flags.stabilizationRotation} governor=${runtime.flags.semanticGovernor}`);
+const server = app.listen(PORT, async () => {
+  console.log(`[NEWSTATE] listening on :${PORT}`);
+  console.log(`[NEWSTATE] provider=gemini model=${process.env.GEMINI_MODEL || 'gemini-1.5-flash'}`);
+  console.log(`[NEWSTATE] safeMode=${runtime.flags.safeMode} personas=${runtime.flags.personasEnabled} memory=${runtime.flags.memoryEnabled}`);
+  console.log(`[NEWSTATE] shadow flags: classifier=${runtime.flags.semanticClassifier} rotation=${runtime.flags.stabilizationRotation} governor=${runtime.flags.semanticGovernor}`);
+  console.log(`[NEWSTATE] memory records loaded: ${hexMemory.count()}`);
+
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    try {
+      const me = await telegramBot.getMe();
+      if (me.ok) {
+        console.log(`[NEWSTATE] telegram: @${me.result.username} (id:${me.result.id}) LIVE`);
+        if (process.env.WEBHOOK_BASE_URL) {
+          const wh = await telegramBot.setWebhook(`${process.env.WEBHOOK_BASE_URL}/telegram/webhook`);
+          console.log(`[NEWSTATE] telegram webhook: ${wh.ok ? 'registered' : 'FAILED — ' + wh.description}`);
+        }
+      } else {
+        console.log(`[NEWSTATE] telegram: token present but getMe failed — ${me.description || 'unknown'}`);
+      }
+    } catch (e) {
+      console.log(`[NEWSTATE] telegram: init error — ${e.message}`);
+    }
+  } else {
+    console.log('[NEWSTATE] telegram: no token — bot disabled');
+  }
 });
 
 function shutdown(signal) {
-  console.log(`[openkraft-rev2] received ${signal}, shutting down...`);
+  console.log(`[NEWSTATE] ${signal} received, shutting down...`);
   forensics.flush();
   server.close(() => {
-    console.log('[openkraft-rev2] closed cleanly.');
+    console.log('[NEWSTATE] closed cleanly.');
     process.exit(0);
   });
   setTimeout(() => process.exit(1), 5000).unref();
