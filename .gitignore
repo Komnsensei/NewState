@@ -4,3 +4,5 @@ node_modules/
 forensics/
 snapshots/
 replays/
+
+memory/telegram_chats/photos/
