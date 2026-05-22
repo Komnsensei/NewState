@@ -18,13 +18,13 @@ class RuntimeState {
     this.flags = {
       safeMode:        true,
       personasEnabled: false,
-      memoryEnabled:   true,   // PROMOTED: Phase 6M — HexMemory now live
+            memoryEnabled: false,      // safe default � enabled at runtime
 
       // I-601: promoted after delta report review (mean confidence 0.778, harness-only)
       // Operator gate: delta-report.json reviewed 2026-05-17
       semanticClassifier:     'live',
       stabilizationRotation:  'live',
-      semanticGovernor:       'live',
+            semanticGovernor: 'shadow', // pending real-model traffic evidence per I-601
 
       // Phase 7: Gravity Engine — shadow on init, promoted per I-601 discipline
       gravityPressureMode:    'shadow'
