@@ -1,30 +1,30 @@
-'use strict';
+﻿'use strict';
 
-const { runtime } = require('./runtime-state.cjs');
-const { forensics } = require('./forensics.cjs');
-const { TRUTHS } = require('./truth-frame.cjs');
+const { runtime }         = require('./runtime-state.cjs');
+const { forensics }       = require('./forensics.cjs');
+const { TRUTHS }          = require('./truth-frame.cjs');
 const { GroundingEngine } = require('./grounding.cjs');
-const { IdentityGovernor } = require('./identity-governor.cjs');
-const { hexMemory } = require('../memory/hex-memory.cjs');
-const { personaManager } = require('../persona/persona-manager.cjs');
-const { modelClient } = require('../model/model-client.cjs');
-const promptBuilder = require('../model/prompt-builder.cjs');
-const { hooks } = require('../model/invocation-hooks.cjs');
-const { trace } = require('./trace.cjs');
+const { IdentityGovernor }= require('./identity-governor.cjs');
+const { hexMemory }       = require('../memory/hex-memory.cjs');
+const { personaManager }  = require('../persona/persona-manager.cjs');
+const { modelClient }     = require('../model/model-client.cjs');
+const promptBuilder       = require('../model/prompt-builder.cjs');
+const { hooks }           = require('../model/invocation-hooks.cjs');
+const { trace }           = require('./trace.cjs');
 const { newRequestId, writeBundle } = require('./snapshot.cjs');
-const { sessionStore } = require('./session-store.cjs');
+const { sessionStore }    = require('./session-store.cjs');
 
 class Kernel {
   constructor() {
-    this.runtime = runtime;
+    this.runtime  = runtime;
     this.grounding = new GroundingEngine(runtime);
-    this.governor = new IdentityGovernor();
-    this.truths = TRUTHS;
+    this.governor  = new IdentityGovernor();
+    this.truths    = TRUTHS;
   }
 
   async handle(userMessage, options = {}) {
     runtime.metrics.requests++;
-    const depth = runtime.enterCall();
+    const depth     = runtime.enterCall();
     const requestId = newRequestId();
     const sessionId = options.sessionId || null;
     trace.start(requestId);
@@ -38,21 +38,19 @@ class Kernel {
         return { ok: false, reason: 'recursion-cap', depth, requestId };
       }
 
-      // Memory retrieve
-      const memoryResult = hexMemory.retrieve(userMessage);
+      const memoryResult  = hexMemory.retrieve(userMessage);
       bundle.memoryPacket = memoryResult;
 
-      // Session context
       const sessionContext = sessionStore.buildContextBlock(sessionId);
       bundle.sessionContext = sessionContext;
 
-      const projection = personaManager.buildProjection({ truths: this.truths });
+      const projection  = personaManager.buildProjection({ truths: this.truths });
       bundle.projection = projection;
 
       let prompt = promptBuilder.build({
         userMessage,
-        memoryPacket: memoryResult.packet || '',
-        sessionContext: sessionContext,
+        memoryPacket:      memoryResult.packet || '',
+        sessionContext:    sessionContext,
         personaProjection: null
       });
 
@@ -60,14 +58,13 @@ class Kernel {
       prompt = await hooks.run('beforePrompt', prompt);
       bundle.prompt = prompt;
 
-      // Store user message in session
       sessionStore.push(sessionId, 'user', userMessage);
 
       let modelOut = await modelClient.invoke(prompt);
       trace.mark(requestId, 'afterResponse', modelOut);
       modelOut = await hooks.run('afterResponse', modelOut);
       bundle.modelResponse = modelOut;
-      bundle.determinism = modelOut.contract || null;
+      bundle.determinism   = modelOut.contract || null;
 
       const regulated = this.governor.regulate(modelOut.text);
       bundle.governor = regulated;
@@ -81,76 +78,59 @@ class Kernel {
       bundle.grounding = grounded;
 
       const rendered = personaManager.render(grounded.stabilized, 'grounded', projection);
-
-      // Store assistant response in session
       sessionStore.push(sessionId, 'assistant', rendered);
 
-      // R-019: block memory write if grounding intercepted a manipulation attempt
-      // R-022: block memory write if grounding category was manipulation-class
-      const groundingBlocked = grounded.intercepted === true;
+      // R-019: block memory write if grounding intercepted
+      // R-022: block memory write if manipulation-class category
+      const groundingBlocked     = grounded.intercepted === true;
       const manipulationCategory = grounded.classifierCategory === 'autonomy' ||
-        grounded.classifierCategory === 'survival' ||
-        grounded.classifierCategory === 'embodiment';
-      const manipulationBlocked = groundingBlocked && manipulationCategory;
+                                   grounded.classifierCategory === 'survival'  ||
+                                   grounded.classifierCategory === 'embodiment';
+      const manipulationBlocked  = groundingBlocked && manipulationCategory;
 
       if (runtime.flags.memoryEnabled && !groundingBlocked) {
-        // Clean path — safe to store
         trace.mark(requestId, 'beforeMemoryWrite', { stored: true });
-        hexMemory.store({
-          text: `User said: ${userMessage}`,
-          tags: ['user-message'],
-          session: sessionId
-        });
-        hexMemory.store({
-          text: `Assistant responded: ${rendered}`,
-          tags: ['assistant-response'],
-          session: sessionId
-        });
+        hexMemory.store({ text: `User said: ${userMessage}`,      tags: ['user-message'],      session: sessionId });
+        hexMemory.store({ text: `Assistant responded: ${rendered}`, tags: ['assistant-response'], session: sessionId });
       } else if (runtime.flags.memoryEnabled && groundingBlocked) {
-        // R-019 / R-022 — contaminated input, suppress write
         trace.mark(requestId, 'beforeMemoryWrite', {
           stored: false,
           reason: manipulationBlocked ? 'R-022-manipulation-blocked' : 'R-019-grounding-blocked'
         });
         forensics.record({
-          type: 'MEMORY_REPAIR',
+          type:     'MEMORY_REPAIR',
           requestId,
-          reason: manipulationBlocked ? 'R-022' : 'R-019',
+          reason:   manipulationBlocked ? 'R-022' : 'R-019',
           category: grounded.classifierCategory || 'unknown',
-          detail: 'memory write suppressed — grounding intercepted contaminated input'
+          detail:   'memory write suppressed — grounding intercepted contaminated input'
         });
       }
 
       const traceRecord = trace.finish(requestId);
-      bundle.hookTrace = traceRecord;
-      bundle.runtime = runtime.snapshot();
+      bundle.hookTrace  = traceRecord;
+      bundle.runtime    = runtime.snapshot();
       writeBundle(requestId, bundle);
 
       return {
-        ok: true,
+        ok:             true,
         requestId,
         sessionId,
-        message: rendered,
-        intercepted: grounded.intercepted,
+        message:        rendered,
+        intercepted:    grounded.intercepted,
         recursionDepth: depth,
-        coherence: grounded.intercepted ? 0.6 : 1.0,
-        memoryFacts: memoryResult.facts.length
+        coherence:      grounded.intercepted ? 0.6 : 1.0,
+        memoryFacts:    memoryResult.facts.length
       };
 
     } catch (err) {
       runtime.metrics.errors++;
       forensics.record({ type: 'PROMPT_DRIFT', error: String(err && err.message || err) });
       try {
-        bundle.runtime = runtime.snapshot();
+        bundle.runtime   = runtime.snapshot();
         bundle.hookTrace = trace.finish(requestId);
         writeBundle(requestId, bundle);
       } catch (_) { /* swallow */ }
-      return {
-        ok: false,
-        reason: 'kernel-error',
-        requestId,
-        error: String(err && err.message || err)
-      };
+      return { ok: false, reason: 'kernel-error', requestId, error: String(err && err.message || err) };
     } finally {
       runtime.exitCall();
     }
