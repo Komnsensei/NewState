@@ -1,8 +1,8 @@
-{
-  "locked": false,
-  "lockTimestamp": null,
-  "lockedBy": null,
-  "verifydScore": null,
+﻿{
+  "locked": true,
+  "lockTimestamp": "2026-05-18T07:25:19.675Z",
+  "lockedBy": "Shawn/Komnsensei",
+  "verifydScore": 95,
   "motorState": "bkg",
   "floorTarget": 0.7,
   "floorValues": {
