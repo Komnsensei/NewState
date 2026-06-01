@@ -28,6 +28,16 @@ app.use((_req, res, next) => {
 });
 
 app.use(express.json({ limit: '256kb' }));
+
+// Handle JSON parse errors gracefully (e.g. malformed webhook payloads)
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    console.error('[NEWSTATE] JSON parse error on', req.method, req.path, '— skipping');
+    return res.status(400).json({ ok: false, reason: 'invalid-json' });
+  }
+  next(err);
+});
+
 app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 app.use('/', chatRoutes);
 
