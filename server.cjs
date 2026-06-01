@@ -31,7 +31,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptim
 app.use('/', chatRoutes);
 
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, async () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`[NEWSTATE] listening on :${PORT}`);
   console.log(`[NEWSTATE] provider=${modelClient.config.provider} model=${modelClient.config.model}`);
   console.log(`[NEWSTATE] safeMode=${runtime.flags.safeMode} personas=${runtime.flags.personasEnabled} memory=${runtime.flags.memoryEnabled}`);
