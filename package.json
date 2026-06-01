@@ -1,22 +1,22 @@
 {
-  "name": "openkraft-rev2",
-  "version": "0.6.0",
-  "type": "commonjs",
-  "main": "server.cjs",
-  "scripts": {
-    "start": "node server.cjs",
-    "test": "node tests/run.cjs",
-    "lint:sdk": "node tools/check-sdk-containment.cjs",
-    "verify": "npm run lint:sdk && npm test"
-  },
-  "dependencies": {
-    "@google-cloud/vertexai": "^1.12.0",
-    "@google/genai": "^2.6.0",
-    "@google/generative-ai": "^0.21.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "google-auth-library": "^10.6.2",
-    "googleapis": "^172.0.0"
-  }
+    "name":  "openkraft-rev2",
+    "version":  "0.6.0",
+    "type":  "commonjs",
+    "main":  "server.cjs",
+    "scripts":  {
+                    "start":  "node server.js",
+                    "test":  "node tests/run.cjs",
+                    "lint:sdk":  "node tools/check-sdk-containment.cjs",
+                    "verify":  "npm run lint:sdk \u0026\u0026 npm test"
+                },
+    "dependencies":  {
+                         "@google-cloud/vertexai":  "^1.12.0",
+                         "@google/genai":  "^2.6.0",
+                         "@google/generative-ai":  "^0.21.0",
+                         "cors":  "^2.8.5",
+                         "dotenv":  "^16.4.5",
+                         "express":  "^4.19.2",
+                         "google-auth-library":  "^10.6.2",
+                         "googleapis":  "^172.0.0"
+                     }
 }
