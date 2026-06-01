@@ -31,13 +31,16 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptim
 app.use('/', chatRoutes);
 
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, '0.0.0.0', async () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`[NEWSTATE] listening on :${PORT}`);
   console.log(`[NEWSTATE] provider=${modelClient.config.provider} model=${modelClient.config.model}`);
   console.log(`[NEWSTATE] safeMode=${runtime.flags.safeMode} personas=${runtime.flags.personasEnabled} memory=${runtime.flags.memoryEnabled}`);
   console.log(`[NEWSTATE] shadow flags: classifier=${runtime.flags.semanticClassifier} rotation=${runtime.flags.stabilizationRotation} governor=${runtime.flags.semanticGovernor}`);
   console.log(`[NEWSTATE] memory records loaded: ${hexMemory.count()}`);
+});
 
+// Initialize Telegram asynchronously without blocking the server
+(async () => {
   if (process.env.TELEGRAM_BOT_TOKEN) {
     try {
       const me = await telegramBot.getMe();
@@ -56,7 +59,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   } else {
     console.log('[NEWSTATE] telegram: no token — bot disabled');
   }
-});
+})();
 
 function shutdown(signal) {
   console.log(`[NEWSTATE] ${signal} received, shutting down...`);
@@ -72,3 +75,4 @@ process.on('SIGINT',  () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 module.exports = { app, server };
+
