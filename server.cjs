@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 require('dotenv').config();
 
@@ -20,13 +20,14 @@ if (!process.env.GEMINI_API_KEY) {
 const app = express();
 app.use(cors());
 
-// ngrok browser-warning bypass â€” Telegram needs this to reach the webhook
+// ngrok browser-warning bypass — Telegram needs this to reach the webhook
 app.use((_req, res, next) => {
   res.setHeader('ngrok-skip-browser-warning', '1');
   next();
 });
 
 app.use(express.json({ limit: '256kb' }));
+app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 app.use('/', chatRoutes);
 
 const PORT = process.env.PORT || 3000;
@@ -44,16 +45,16 @@ const server = app.listen(PORT, async () => {
         console.log(`[NEWSTATE] telegram: @${me.result.username} (id:${me.result.id}) LIVE`);
         if (process.env.WEBHOOK_BASE_URL) {
           const wh = await telegramBot.setWebhook(`${process.env.WEBHOOK_BASE_URL}/telegram/webhook`);
-          console.log(`[NEWSTATE] telegram webhook: ${wh.ok ? 'registered' : 'FAILED â€” ' + wh.description}`);
+          console.log(`[NEWSTATE] telegram webhook: ${wh.ok ? 'registered' : 'FAILED — ' + wh.description}`);
         }
       } else {
-        console.log(`[NEWSTATE] telegram: token present but getMe failed â€” ${me.description || 'unknown'}`);
+        console.log(`[NEWSTATE] telegram: token present but getMe failed — ${me.description || 'unknown'}`);
       }
     } catch (e) {
-      console.log(`[NEWSTATE] telegram: init error â€” ${e.message}`);
+      console.log(`[NEWSTATE] telegram: init error — ${e.message}`);
     }
   } else {
-    console.log('[NEWSTATE] telegram: no token â€” bot disabled');
+    console.log('[NEWSTATE] telegram: no token — bot disabled');
   }
 });
 
