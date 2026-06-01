@@ -1,13 +1,13 @@
 'use strict';
 // ---------------------------------------------------------------
 // model/google-cloud-client.cjs
-// Esma brain — Gemini 2.5 Pro via @google/genai SDK
-// Lazy init — SDK not instantiated until first invoke()
+// Esma brain ï¿½ Gemini 2.5 Pro via @google/genai SDK
+// Lazy init ï¿½ SDK not instantiated until first invoke()
 // ---------------------------------------------------------------
 
 const determinism = require('./determinism-contract.cjs');
 
-const DEFAULT_MODEL   = process.env.GOOGLE_CLOUD_MODEL   || 'gemini-2.5-pro';
+const DEFAULT_MODEL   = process.env.GOOGLE_CLOUD_MODEL   || 'gemini-1.5-flash';
 const DEFAULT_TIMEOUT = Number(process.env.GOOGLE_CLOUD_TIMEOUT_MS  || 30000);
 const DEFAULT_RETRIES = Number(process.env.GOOGLE_CLOUD_MAX_RETRIES || 2);
 
@@ -36,10 +36,10 @@ class GoogleCloudClient {
       location:   config.location  || null,
     };
     this.tokens = { in: 0, out: 0 };
-    this._ai = null; // lazy — not instantiated until first call
+    this._ai = null; // lazy ï¿½ not instantiated until first call
   }
 
- // -- lazy init — reads env at call time, not load time -------
+ // -- lazy init ï¿½ reads env at call time, not load time -------
   _getAI() {
     if (this._ai) return this._ai;
 
