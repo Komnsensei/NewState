@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -15,7 +15,10 @@ const FORBIDDEN = new Set([
   'ollama'
 ]);
 
-const ALLOWED_FILE = path.normalize('model/model-client.cjs');
+const ALLOWED_FILES = new Set([
+  path.normalize('model/model-client.cjs'),
+  path.normalize('model/google-cloud-client.cjs')
+]);
 const ROOTS = ['kernel', 'memory', 'persona', 'model', 'anchors', 'routes', 'tests', 'tools'];
 
 function stripCommentsAndStrings(src) {
@@ -79,7 +82,7 @@ function walk(dir) {
     if (stat.isDirectory()) { walk(full); continue; }
     if (!/\.(cjs|js|mjs)$/.test(entry)) continue;
     const rel = path.normalize(path.relative(process.cwd(), full));
-    if (rel === ALLOWED_FILE) continue;
+    if (ALLOWED_FILES.has(rel)) continue;
     const src = fs.readFileSync(full, 'utf8');
     const specs = extractModuleSpecifiers(src);
     for (const s of specs) {

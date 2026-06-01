@@ -1,7 +1,15 @@
-'use strict';
+﻿'use strict';
+
+// Guard — fail fast if provider needs a key that is not present
+if (process.env.BRAIN_PROVIDER !== 'google-cloud') {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not set');
+  }
+}
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const determinism = require('./determinism-contract.cjs');
+const { googleCloudClient } = require('./google-cloud-client.cjs');
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 const DEFAULT_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 30000);
@@ -51,5 +59,28 @@ class ModelClient {
   }
 }
 
-const modelClient = new ModelClient();
-module.exports = { ModelClient, modelClient };
+let _modelClient = null;
+function getModelClient() {
+  if (_modelClient) return _modelClient;
+  if (process.env.BRAIN_PROVIDER === 'google-cloud') {
+    _modelClient = googleCloudClient;
+  } else {
+    _modelClient = new ModelClient();
+  }
+  return _modelClient;
+}
+
+// Lazy wrapper — reads env at first invoke, allows mock override in tests
+const modelClient = {
+  get config() { return getModelClient().config; },
+  get tokens() { return getModelClient().tokens; },
+  buildContract(...args) { return getModelClient().buildContract(...args); },
+  async invoke(...args) { return getModelClient().invoke(...args); },
+};
+
+module.exports = { ModelClient, modelClient, getModelClient };
+
+
+
+
+

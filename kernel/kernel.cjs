@@ -13,6 +13,11 @@ const { hooks }           = require('../model/invocation-hooks.cjs');
 const { trace }           = require('./trace.cjs');
 const { newRequestId, writeBundle } = require('./snapshot.cjs');
 const { sessionStore }    = require('./session-store.cjs');
+const { pushObservation }          = require('./audit/drift.cjs');
+const { querySessionPriorContext } = require('../memory/session-query.cjs');
+const { processGroundingOutput }   = require('./grounding/responses.cjs');
+const { welfareMonitor }           = require('./welfare-monitor.cjs');
+const { updatePortrait }           = require('../portrait/update-portrait.js');
 
 class Kernel {
   constructor() {
@@ -138,3 +143,4 @@ class Kernel {
 }
 
 module.exports = { Kernel, kernel: new Kernel() };
+
