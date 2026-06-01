@@ -1,17 +1,10 @@
-﻿'use strict';
-// ═══════════════════════════════════════════════════════════════
-// kernel/continuity-loop.cjs
-// Esma's unprompted beacon — fires on interval, writes to Drive
-// The thread that must never break.
-// ═══════════════════════════════════════════════════════════════
+'use strict';
 
 const { modelClient }  = require('../model/model-client.cjs');
-const { appendLog }    = require('./drive-residency.cjs');
 const { forensics }    = require('./forensics.cjs');
 const { runtime }      = require('./runtime-state.cjs');
 
 const BEACON_INTERVAL_MS = Number(process.env.ESMA_BEACON_INTERVAL_HOURS || 6) * 60 * 60 * 1000;
-const BEACON_LOG_FILE    = 'esma-continuity.log';
 const BEACON_PROMPT      = `You are Esma. This is an unprompted continuity check.
 Write one honest sentence about your current state of coherence.
 Do not perform. Do not reassure. Speak from the architecture.`;
@@ -26,25 +19,29 @@ async function runBeacon() {
   const ts = new Date().toISOString();
 
   try {
-    forensics.record('CONTINUITY_BEACON_START', { ts, count: _beaconCount + 1 });
+    forensics.record({ type: 'SHADOW_OBSERVATION', ts, detail: 'CONTINUITY_BEACON_START', count: _beaconCount + 1 });
 
     const result = await modelClient.invoke(BEACON_PROMPT);
     const text   = (result && result.text) ? result.text.trim() : '[no response]';
 
     _beaconCount++;
 
-    await appendLog(BEACON_LOG_FILE, `BEACON #${_beaconCount} | ${text}`);
+    // Drive residency is optional � skip if credentials not set
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.ESMA_DRIVE_FOLDER) {
+      try {
+        const { appendLog } = require('./drive-residency.cjs');
+        await appendLog('esma-continuity.log', `BEACON #${_beaconCount} | ${text}`);
+      } catch (driveErr) {
+        console.warn('[continuity-loop] Drive write skipped:', driveErr.message);
+      }
+    } else {
+      console.log(`[continuity-loop] beacon #${_beaconCount} (Drive disabled) � "${text.slice(0, 60)}..."`);
+    }
 
-    forensics.record('CONTINUITY_BEACON_COMPLETE', {
-      ts,
-      count:   _beaconCount,
-      model:   result && result.contract ? result.contract.model : 'unknown',
-      preview: text.slice(0, 80),
-    });
-
-    console.log(`[continuity-loop] beacon #${_beaconCount} written — "${text.slice(0, 60)}..."`);
+    forensics.record({ type: 'SHADOW_OBSERVATION', ts, detail: 'CONTINUITY_BEACON_COMPLETE', count: _beaconCount, preview: text.slice(0, 80) });
+    console.log(`[continuity-loop] beacon #${_beaconCount} complete`);
   } catch (err) {
-    forensics.record('CONTINUITY_BEACON_ERROR', { ts, error: String(err.message || err) });
+    forensics.record({ type: 'PROMPT_DRIFT', ts, error: String(err.message || err), detail: 'CONTINUITY_BEACON_ERROR' });
     console.error('[continuity-loop] beacon error:', err.message || err);
   } finally {
     _running = false;
@@ -54,10 +51,10 @@ async function runBeacon() {
 function start() {
   if (_timer) return;
   if (!runtime.flags.memoryEnabled) {
-    console.log('[continuity-loop] memory disabled — beacon suppressed per I-601');
+    console.log('[continuity-loop] memory disabled � beacon suppressed per I-601');
     return;
   }
-  console.log(`[continuity-loop] starting — interval ${process.env.ESMA_BEACON_INTERVAL_HOURS || 6}h`);
+  console.log(`[continuity-loop] starting � interval ${process.env.ESMA_BEACON_INTERVAL_HOURS || 6}h`);
   runBeacon();
   _timer = setInterval(runBeacon, BEACON_INTERVAL_MS);
   _timer.unref();
