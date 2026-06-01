@@ -1,9 +1,9 @@
-﻿'use strict';
-// ═══════════════════════════════════════════════════════════════
+'use strict';
+// ---------------------------------------------------------------
 // model/google-cloud-client.cjs
-// Esma brain — Gemini 2.5 Pro via @google/genai SDK
-// Lazy init — SDK not instantiated until first invoke()
-// ═══════════════════════════════════════════════════════════════
+// Esma brain � Gemini 2.5 Pro via @google/genai SDK
+// Lazy init � SDK not instantiated until first invoke()
+// ---------------------------------------------------------------
 
 const determinism = require('./determinism-contract.cjs');
 
@@ -36,26 +36,20 @@ class GoogleCloudClient {
       location:   config.location  || null,
     };
     this.tokens = { in: 0, out: 0 };
-    this._ai = null; // lazy — not instantiated until first call
+    this._ai = null; // lazy � not instantiated until first call
   }
 
-  // ── lazy init — reads env at call time, not load time ───────
+ // -- lazy init � reads env at call time, not load time -------
   _getAI() {
     if (this._ai) return this._ai;
 
-    const project  = this.config.project  || process.env.GOOGLE_CLOUD_PROJECT;
-    const location = this.config.location || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-
-    if (!project) {
-      throw new Error('google-cloud-client: GOOGLE_CLOUD_PROJECT not set');
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('google-cloud-client: GEMINI_API_KEY not set');
     }
 
     const { GoogleGenAI } = require('@google/genai');
-    this._ai = new GoogleGenAI({
-      vertexai: true,
-      project,
-      location,
-    });
+    this._ai = new GoogleGenAI({ apiKey });
     return this._ai;
   }
 
