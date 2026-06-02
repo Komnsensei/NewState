@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { runtime }         = require('./runtime-state.cjs');
 const { forensics }       = require('./forensics.cjs');
@@ -143,4 +143,3 @@ class Kernel {
 }
 
 module.exports = { Kernel, kernel: new Kernel() };
-
