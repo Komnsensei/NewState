@@ -17,6 +17,25 @@ if (!process.env.GEMINI_API_KEY) {
   process.exit(2);
 }
 
+// Global error handlers — catch everything
+process.on('uncaughtException', (err) => {
+  console.error('[NEWSTATE-FATAL] Uncaught Exception:', {
+    message: err && err.message || String(err),
+    stack: err && err.stack || 'no stack',
+    name: err && err.name || 'unknown'
+  });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[NEWSTATE-FATAL] Unhandled Rejection:', {
+    reason: String(reason),
+    promise: String(promise),
+    stack: reason && reason.stack || 'no stack'
+  });
+  // Don't exit on rejection, just log
+});
+
 const app = express();
 
 // Railway-specific proxy trust: trust 1 hop from Railway's reverse proxy
