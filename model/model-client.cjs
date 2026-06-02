@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 // Guard — fail fast if provider needs a key that is not present
 if (process.env.BRAIN_PROVIDER !== 'google-cloud') {
@@ -36,7 +36,7 @@ class ModelClient {
   }
 
   buildContract(overrides = {}) {
-    return determinism.build({ model: this.config.model, temperature: overrides.temperature !== undefined ? overrides.temperature : 0, topP: overrides.topP !== undefined ? overrides.topP : 1, seed: overrides.seed !== undefined ? overrides.seed : 0, providerSupportsSeed: PROVIDER_DETERMINISM.providerSupportsSeed, declaredDeterministic: PROVIDER_DETERMINISM.declaredDeterministic });
+    return determinism.build({ model: this.config.model, temperature: overrides.temperature !== undefined ? overrides.temperature : 0, topP: overrides.topP !== undefined ? overrides.topP : 1, seed: overrides.seed !== undefined ? overrides.seed : null, ...PROVIDER_DETERMINISM });
   }
 
   async invoke(prompt, overrides = {}) {
@@ -79,8 +79,3 @@ const modelClient = {
 };
 
 module.exports = { ModelClient, modelClient, getModelClient };
-
-
-
-
-

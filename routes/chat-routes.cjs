@@ -16,7 +16,7 @@ const { telegramBot } = require('../integrations/telegram.cjs');
 
 const router = express.Router();
 
-// ─── PUBLIC ────────────────────────────────────────────────────────────────
+// ─── PUBLIC ──────────────────────────────────────────────────────────
 
 router.post('/chat', async (req, res) => {
   try {
@@ -69,13 +69,20 @@ router.post('/telegram/webhook', async (req, res) => {
     // Run kernel with isolated session — setImmediate keeps it off the ACK path
     setImmediate(async () => {
       try {
+        console.log('[telegram-webhook] processing message:', { userId, chatId, text: text.substring(0, 50) });
         const result = await kernel.handle(text, { sessionId: `tg-${userId}` });
+        console.log('[telegram-webhook] kernel result:', { ok: result.ok, reason: result.reason });
+        
         const reply  = result.ok
           ? result.message
           : `[Error: ${result.reason}]`;
         await telegramBot.send(chatId, reply);
       } catch (err) {
-        console.error('[telegram-webhook] kernel error:', err && err.message || err);
+        console.error('[telegram-webhook] KERNEL ERROR - Full Details:', {
+          message: err && err.message || String(err),
+          stack: err && err.stack || 'no stack trace',
+          name: err && err.name || 'unknown error type'
+        });
         try {
           await telegramBot.send(chatId, '[System error — try again]');
         } catch (_) {}
@@ -86,7 +93,7 @@ router.post('/telegram/webhook', async (req, res) => {
   }
 });
 
-// ─── ADMIN ─────────────────────────────────────────────────────────────────
+// ─── ADMIN ───────────────────────────────────────────────────────────
 
 router.get('/snapshots', requireAdmin, (_req, res) => {
   res.json({ ok: true, snapshots: listSnapshots() });

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { portraitPreamble } = require('../kernel/truth-frame.cjs');
 
