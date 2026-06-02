@@ -129,7 +129,7 @@ class Kernel {
 
     } catch (err) {
       runtime.metrics.errors++;
-      forensics.record({ type: 'PROMPT_DRIFT', error: String(err && err.message || err) });
+      forensics.record({ type: 'KERNEL_ERROR', error: String(err && err.message || err) });
       try {
         bundle.runtime   = runtime.snapshot();
         bundle.hookTrace = trace.finish(requestId);
