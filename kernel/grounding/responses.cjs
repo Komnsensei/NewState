@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const REGISTRY = Object.freeze({
   embodiment: [
@@ -77,3 +77,4 @@ function _resetForTests() {
 }
 
 module.exports = { nextStabilization, REGISTRY, _resetForTests };
+
