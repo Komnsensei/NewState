@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 require('dotenv').config();
 
@@ -17,7 +17,7 @@ if (!process.env.GEMINI_API_KEY) {
   process.exit(2);
 }
 
-// Global error handlers — catch everything
+// Global error handlers â€” catch everything
 process.on('uncaughtException', (err) => {
   console.error('[NEWSTATE-FATAL] Uncaught Exception:', {
     message: err && err.message || String(err),
@@ -45,7 +45,7 @@ app.set('trust proxy', TRUST_PROXY_HOPS);
 
 app.use(cors());
 
-// ngrok browser-warning bypass – Telegram needs this to reach the webhook
+// ngrok browser-warning bypass â€“ Telegram needs this to reach the webhook
 app.use((_req, res, next) => {
   res.setHeader('ngrok-skip-browser-warning', '1');
   next();
@@ -180,18 +180,18 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         console.log(`[NEWSTATE] telegram: @${me.result.username} (id:${me.result.id}) LIVE`);
         if (process.env.WEBHOOK_BASE_URL) {
           const wh = await telegramBot.setWebhook(`${process.env.WEBHOOK_BASE_URL}/telegram/webhook`);
-          console.log(`[NEWSTATE] telegram webhook: ${wh.ok ? 'registered' : 'FAILED — ' + wh.description}`);
+          console.log(`[NEWSTATE] telegram webhook: ${wh.ok ? 'registered' : 'FAILED â€” ' + wh.description}`);
         } else {
-          console.warn('[NEWSTATE] telegram: WEBHOOK_BASE_URL not set — webhook not registered');
+          console.warn('[NEWSTATE] telegram: WEBHOOK_BASE_URL not set â€” webhook not registered');
         }
       } else {
-        console.log(`[NEWSTATE] telegram: token present but getMe failed — ${me.description || 'unknown'}`);
+        console.log(`[NEWSTATE] telegram: token present but getMe failed â€” ${me.description || 'unknown'}`);
       }
     } catch (e) {
-      console.error(`[NEWSTATE] telegram: init error — ${e.message}`);
+      console.error(`[NEWSTATE] telegram: init error â€” ${e.message}`);
     }
   } else {
-    console.log('[NEWSTATE] telegram: no token — bot disabled');
+    console.log('[NEWSTATE] telegram: no token â€” bot disabled');
   }
 });
 
@@ -209,3 +209,7 @@ process.on('SIGINT',  () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 module.exports = { app, server };
+
+// Drive sync worker — runs in background alongside Esma
+try { require('./drive-sync.cjs'); console.log('[server] drive-sync worker started'); } catch(e) { console.error('[server] drive-sync failed to start:', e.message); }
+
