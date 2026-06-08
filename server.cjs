@@ -146,6 +146,8 @@ app.get('/health', (_req, res) => {
 
 app.use('/', chatRoutes);
 
+require('./endpoints.cjs')(app);
+
 // 404 handler
 app.use((_req, res) => {
   res.status(404).json({ ok: false, reason: 'not-found' });
@@ -228,7 +230,6 @@ app.post("/hexagnt", async (req, res) => {
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-require('./endpoints.cjs')(app);
 
 const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`[NEWSTATE] listening on :${PORT}`);
