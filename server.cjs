@@ -182,7 +182,6 @@ app.post("/forensic-sink", (req, res) => {
     const fs2 = require("fs");
     fs2.mkdirSync("forensic", { recursive: true });
     fs2.appendFileSync("forensic/forensic-sink.jsonl", JSON.stringify(Object.assign({}, req.body, { received_at: new Date().toISOString() })) + String.fromCharCode(10));
-");
   } catch(e) {}
   res.json({ ok: true, received: true });
 });
