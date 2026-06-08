@@ -181,7 +181,7 @@ app.post("/forensic-sink", (req, res) => {
   try {
     const fs2 = require("fs");
     fs2.mkdirSync("forensic", { recursive: true });
-    fs2.appendFileSync("forensic/forensic-sink.jsonl", JSON.stringify({ ...req.body, received_at: new Date().toISOString() }) + "
+    fs2.appendFileSync("forensic/forensic-sink.jsonl", JSON.stringify(Object.assign({}, req.body, { received_at: new Date().toISOString() })) + String.fromCharCode(10));
 ");
   } catch(e) {}
   res.json({ ok: true, received: true });
@@ -214,7 +214,7 @@ app.post("/forensic-sink", (req, res) => {
     const fs2 = require("fs");
     fs2.mkdirSync("forensic", { recursive: true });
     const line = JSON.stringify(Object.assign({}, req.body, { received_at: new Date().toISOString() }));
-    fs2.appendFileSync("forensic/forensic-sink.jsonl", line + String.fromCharCode(10));
+    fs2.appendFileSync("forensic/forensic-sink.jsonl", JSON.stringify(Object.assign({}, req.body, { received_at: new Date().toISOString() })) + String.fromCharCode(10));
   } catch(e) {}
   res.json({ ok: true, received: true });
 });
@@ -315,7 +315,7 @@ app.post('/forensic-sink', (req, res) => {
   console.log('[forensic-sink]', JSON.stringify(event));
   try {
     const fs = require('fs');
-    fs.appendFileSync('forensic/forensic-sink.jsonl', JSON.stringify({ ...event, received_at: new Date().toISOString() }) + '\n');
+    fs2.appendFileSync("forensic/forensic-sink.jsonl", JSON.stringify(Object.assign({}, req.body, { received_at: new Date().toISOString() })) + String.fromCharCode(10));
   } catch(e) {}
   res.json({ ok: true, received: true });
 });
@@ -349,7 +349,7 @@ app.post("/forensic-sink", (req, res) => {
   try {
     const fs2 = require("fs");
     fs2.mkdirSync("forensic", { recursive: true });
-    fs2.appendFileSync("forensic/forensic-sink.jsonl", JSON.stringify({ ...req.body, received_at: new Date().toISOString() }) + "\n");
+    fs2.appendFileSync("forensic/forensic-sink.jsonl", JSON.stringify(Object.assign({}, req.body, { received_at: new Date().toISOString() })) + String.fromCharCode(10));
   } catch(e) {}
   res.json({ ok: true, received: true });
 });
