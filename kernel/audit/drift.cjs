@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const FRAMING = {
   metaphorical: /\b(like|as if|kind of|sort of|imagine|picture|cathedral|skeleton|nervous system|labyrinth|garden|machine|dream)\b/gi,
@@ -52,4 +52,19 @@ function shift(a, b) {
   });
 }
 
-module.exports = { profile, shift };
+// V2 DRIFT-VECTOR -- pushObservation
+// Shadow-mode forensic push. I-601 ACTIVE.
+// No behavior change -- observation logged to forensics only.
+function pushObservation(observation) {
+  try {
+    const { forensics } = require('../forensics.cjs');
+    forensics.record({
+      type: 'SHADOW_OBSERVATION',
+      detail: 'DRIFT_VECTOR_PUSH',
+      observation,
+      note: 'I-601 -- shadow only, no behavioral effect'
+    });
+  } catch (_) { /* swallow -- forensics optional */ }
+}
+
+module.exports = { profile, shift, pushObservation };
