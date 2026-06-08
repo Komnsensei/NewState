@@ -229,6 +229,8 @@ app.post("/hexagnt", async (req, res) => {
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
+require('./endpoints.cjs')(app);
+
 const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`[NEWSTATE] listening on :${PORT}`);
   console.log(`[NEWSTATE] provider=${modelClient.config.provider} model=${modelClient.config.model}`);
