@@ -213,3 +213,58 @@ module.exports = { app, server };
 // Drive sync worker — runs in background alongside Esma
 try { require('./drive-sync.cjs'); console.log('[server] drive-sync worker started'); } catch(e) { console.error('[server] drive-sync failed to start:', e.message); }
 
+
+// ── HEXAGNT ENDPOINTS ──────────────────────────────────────────
+
+// Drive proxy — bypasses Base44 Builder+ OAuth requirement
+app.get('/drive/files', async (req, res) => {
+  try {
+    const { google } = require('googleapis');
+    const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    const auth = new google.auth.GoogleAuth({ credentials: creds, scopes: ['https://www.googleapis.com/auth/drive.readonly'] });
+    const drive = google.drive({ version: 'v3', auth });
+    const result = await drive.files.list({
+      q: req.query.q || undefined,
+      fields: 'files(id,name,mimeType,modifiedTime,size,webViewLink)',
+      pageSize: parseInt(req.query.pageSize) || 50,
+      orderBy: 'modifiedTime desc'
+    });
+    res.json({ ok: true, files: result.data.files });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/drive/read', async (req, res) => {
+  try {
+    const { google } = require('googleapis');
+    const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    const auth = new google.auth.GoogleAuth({ credentials: creds, scopes: ['https://www.googleapis.com/auth/drive.readonly'] });
+    const drive = google.drive({ version: 'v3', auth });
+    const meta = await drive.files.get({ fileId: req.query.fileId, fields: 'id,name,mimeType' });
+    const resp = await drive.files.get({ fileId: req.query.fileId, alt: 'media' }, { responseType: 'text' });
+    res.json({ ok: true, name: meta.data.name, mimeType: meta.data.mimeType, content: resp.data });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+// Forensic sink — receives forensic events from Base44 Esma app
+app.post('/forensic-sink', (req, res) => {
+  const event = req.body;
+  console.log('[forensic-sink]', JSON.stringify(event));
+  try {
+    const fs = require('fs');
+    fs.appendFileSync('forensic/forensic-sink.jsonl', JSON.stringify({ ...event, received_at: new Date().toISOString() }) + '\n');
+  } catch(e) {}
+  res.json({ ok: true, received: true });
+});
+
+// Hexagnt↔Esma direct channel
+app.post('/hexagnt', async (req, res) => {
+  try {
+    const { message, from } = req.body;
+    if (!message) return res.json({ ok: false, error: 'no message' });
+    console.log(`[hexagnt] message from ${from||'hexagnt'}: ${message}`);
+    const kernel = require('./kernel/kernel.cjs');
+    const sessionId = 'hexagnt-channel';
+    const response = await kernel.run({ message, sessionId, authorOverride: from || 'hexagnt' });
+    res.json({ ok: true, response, from: 'esma', timestamp: new Date().toISOString() });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
