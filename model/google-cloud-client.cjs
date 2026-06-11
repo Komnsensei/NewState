@@ -1,4 +1,14 @@
-'use strict';
+const { GoogleGenAI } = require("@google/genai");
+    const project = process.env.GOOGLE_CLOUD_PROJECT;
+    const location = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
+    if (project) {
+      this._ai = new GoogleGenAI({ vertexai: true, project, location });
+    } else {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("google-cloud-client: no GOOGLE_CLOUD_PROJECT and no GEMINI_API_KEY");
+      this._ai = new GoogleGenAI({ apiKey });
+    }
+    'use strict';
 // ---------------------------------------------------------------
 // model/google-cloud-client.cjs
 // Esma brain � Gemini 2.5 Pro via @google/genai SDK
