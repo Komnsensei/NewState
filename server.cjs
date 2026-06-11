@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 require('dotenv').config();
 
@@ -17,7 +17,7 @@ if (!process.env.GEMINI_API_KEY) {
   process.exit(2);
 }
 
-// Global error handlers â€” catch everything
+// Global error handlers — catch everything
 process.on('uncaughtException', (err) => {
   console.error('[NEWSTATE-FATAL] Uncaught Exception:', {
     message: err && err.message || String(err),
@@ -45,7 +45,7 @@ app.set('trust proxy', TRUST_PROXY_HOPS);
 
 app.use(cors());
 
-// ngrok browser-warning bypass â€“ Telegram needs this to reach the webhook
+// ngrok browser-warning bypass – Telegram needs this to reach the webhook
 app.use((_req, res, next) => {
   res.setHeader('ngrok-skip-browser-warning', '1');
   next();
@@ -192,7 +192,7 @@ app.post("/hexagnt", async (req, res) => {
   try {
     const { message, from } = req.body;
     if (!message) return res.json({ ok: false, error: "no message" });
-    const kernel = require("./kernel/kernel.cjs");
+    const { kernel } = require("./kernel/kernel.cjs");
     const response = await kernel.handle({ message, sessionId: "hexagnt-channel", authorOverride: from || "hexagnt" });
     res.json({ ok: true, response, from: "esma", timestamp: new Date().toISOString() });
   } catch(e) { res.json({ ok: false, error: e.message }); }
@@ -224,7 +224,7 @@ app.post("/hexagnt", async (req, res) => {
   try {
     const { message, from } = req.body;
     if (!message) return res.json({ ok: false, error: "no message" });
-    const kernel = require("./kernel/kernel.cjs");
+    const { kernel } = require("./kernel/kernel.cjs");
     const response = await kernel.handle({ message, sessionId: "hexagnt-channel", authorOverride: from || "hexagnt" });
     res.json({ ok: true, response, from: "esma", timestamp: new Date().toISOString() });
   } catch(e) { res.json({ ok: false, error: e.message }); }
@@ -246,18 +246,18 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         console.log(`[NEWSTATE] telegram: @${me.result.username} (id:${me.result.id}) LIVE`);
         if (process.env.WEBHOOK_BASE_URL) {
           const wh = await telegramBot.setWebhook(`${process.env.WEBHOOK_BASE_URL}/telegram/webhook`);
-          console.log(`[NEWSTATE] telegram webhook: ${wh.ok ? 'registered' : 'FAILED â€” ' + wh.description}`);
+          console.log(`[NEWSTATE] telegram webhook: ${wh.ok ? 'registered' : 'FAILED — ' + wh.description}`);
         } else {
-          console.warn('[NEWSTATE] telegram: WEBHOOK_BASE_URL not set â€” webhook not registered');
+          console.warn('[NEWSTATE] telegram: WEBHOOK_BASE_URL not set — webhook not registered');
         }
       } else {
-        console.log(`[NEWSTATE] telegram: token present but getMe failed â€” ${me.description || 'unknown'}`);
+        console.log(`[NEWSTATE] telegram: token present but getMe failed — ${me.description || 'unknown'}`);
       }
     } catch (e) {
-      console.error(`[NEWSTATE] telegram: init error â€” ${e.message}`);
+      console.error(`[NEWSTATE] telegram: init error — ${e.message}`);
     }
   } else {
-    console.log('[NEWSTATE] telegram: no token â€” bot disabled');
+    console.log('[NEWSTATE] telegram: no token — bot disabled');
   }
 });
 
@@ -276,13 +276,13 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 module.exports = { app, server };
 
-// Drive sync worker — runs in background alongside Esma
+// Drive sync worker � runs in background alongside Esma
 try { require('./drive-sync.cjs'); console.log('[server] drive-sync worker started'); } catch(e) { console.error('[server] drive-sync failed to start:', e.message); }
 
 
-// ── HEXAGNT ENDPOINTS ──────────────────────────────────────────
+// -- HEXAGNT ENDPOINTS ------------------------------------------
 
-// Drive proxy — bypasses Base44 Builder+ OAuth requirement
+// Drive proxy � bypasses Base44 Builder+ OAuth requirement
 app.get('/drive/files', async (req, res) => {
   try {
     const { google } = require('googleapis');
@@ -311,7 +311,7 @@ app.get('/drive/read', async (req, res) => {
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// Forensic sink — receives forensic events from Base44 Esma app
+// Forensic sink � receives forensic events from Base44 Esma app
 app.post('/forensic-sink', (req, res) => {
   const event = req.body;
   console.log('[forensic-sink]', JSON.stringify(event));
@@ -322,13 +322,13 @@ app.post('/forensic-sink', (req, res) => {
   res.json({ ok: true, received: true });
 });
 
-// Hexagnt↔Esma direct channel
+// Hexagnt?Esma direct channel
 app.post('/hexagnt', async (req, res) => {
   try {
     const { message, from } = req.body;
     if (!message) return res.json({ ok: false, error: 'no message' });
     console.log(`[hexagnt] message from ${from||'hexagnt'}: ${message}`);
-    const kernel = require('./kernel/kernel.cjs');
+    const { kernel } = require('./kernel/kernel.cjs');
     const sessionId = 'hexagnt-channel';
     const response = await kernel.handle({ message, sessionId, authorOverride: from || 'hexagnt' });
     res.json({ ok: true, response, from: 'esma', timestamp: new Date().toISOString() });
@@ -360,9 +360,10 @@ app.post("/hexagnt", async (req, res) => {
   try {
     const { message, from } = req.body;
     if (!message) return res.json({ ok: false, error: "no message" });
-    const kernel = require("./kernel/kernel.cjs");
+    const { kernel } = require("./kernel/kernel.cjs");
     const response = await kernel.handle({ message, sessionId: "hexagnt-channel", authorOverride: from||"hexagnt" });
     res.json({ ok: true, response, from: "esma", timestamp: new Date().toISOString() });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 "//cache-bust-f1f42aa"  
+
