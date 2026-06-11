@@ -1,11 +1,5 @@
 'use strict';
 
-// Guard — fail fast if provider needs a key that is not present
-if (process.env.BRAIN_PROVIDER !== 'google-cloud') {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not set');
-  }
-}
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const determinism = require('./determinism-contract.cjs');
