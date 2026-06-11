@@ -86,7 +86,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-app.get('/health', (_req, res) => {
+app.get('/dbg',function(_r,res){res.json({bp:process.env.BRAIN_PROVIDER,gak:!!process.env.GEMINI_API_KEY,gcp:process.env.GOOGLE_CLOUD_PROJECT,gcj:!!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON})});app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
     uptime: process.uptime(),
