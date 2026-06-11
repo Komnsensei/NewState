@@ -2,6 +2,7 @@
 startCommand = "npm start"  
   
 [variables]  
+BRAIN_PROVIDER = "gemini"  
 GEMINI_MODEL = "gemini-2.5-flash"  
 GOOGLE_CLOUD_MODEL = "gemini-2.5-flash"  
 GOOGLE_CLOUD_PROJECT = "passioncraft"  
