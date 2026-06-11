@@ -28,8 +28,8 @@ module.exports = function registerEndpoints(app) {
     try {
       const { message, from } = req.body;
       if (!message) return res.json({ ok: false, error: 'no message' });
-      const kernel = require('./kernel/kernel.cjs');
-      const response = await kernel.run({ message, sessionId: 'hexagnt-channel', authorOverride: from || 'hexagnt' });
+      const {kernel} = require('./kernel/kernel.cjs');
+      const response = await kernel.handle({ message, sessionId: 'hexagnt-channel', authorOverride: from || 'hexagnt' });
       res.json({ ok: true, response, from: 'esma', timestamp: new Date().toISOString() });
     } catch(e) { res.json({ ok: false, error: e.message }); }
   });
