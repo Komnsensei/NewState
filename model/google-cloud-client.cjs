@@ -1,6 +1,14 @@
 const { GoogleGenAI } = require("@google/genai");
     const project = process.env.GOOGLE_CLOUD_PROJECT;
     const location = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
+    // Bootstrap ADC from inline JSON env var (Railway-friendly)
+    const gcjson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    if (gcjson && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      const tmpDir = require("os").tmpdir();
+      const tmpFile = require("path").join(tmpDir, "gcp-sa-key.json");
+      require("fs").writeFileSync(tmpFile, gcjson, "utf8");
+      process.env.GOOGLE_APPLICATION_CREDENTIALS = tmpFile;
+    }
     if (project) {
       this._ai = new GoogleGenAI({ vertexai: true, project, location });
     } else {
