@@ -9,7 +9,8 @@ module.exports = async ({ test, assert, eq, group }) => {
       let threw = false;
       try {
         delete require.cache[require.resolve('../../model/model-client.cjs')];
-        require('../../model/model-client.cjs');
+        const { ModelClient } = require('../../model/model-client.cjs');
+      new ModelClient();
       } catch (e) {
         threw = /GEMINI_API_KEY/.test(e.message);
       } finally {

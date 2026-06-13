@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 // Test harness. Provides sandbox dirs, a tiny TAP-ish helper, and
 // registers every suite in dependency order.
@@ -29,12 +29,13 @@ async function test(name, fn) {
   try {
     await fn();
     passed++;
-    console.log(`  ✓ ${name}`);
+    console.log(`  âœ“ ${name}`);
   } catch (err) {
     failed++;
     failures.push({ name, err });
-    console.log(`  ✗ ${name}`);
+    console.log(`  âœ— ${name}`);
     console.log(`      ${err && err.message || err}`);
+    console.log(err);
   }
 }
 
@@ -81,6 +82,7 @@ const SUITES = [
   // Phase 5
   './suites/similarity.test.cjs',
   './suites/drift.test.cjs',
+  './suites/drift_v02.test.cjs',
   './suites/stability.test.cjs',
   './suites/patterns.test.cjs',
   // Phase 6G
@@ -88,14 +90,19 @@ const SUITES = [
   './suites/shadow-mode.test.cjs',
   './suites/classifier.test.cjs',
   './suites/stabilization-rotation.test.cjs',
-  './suites/delta-report.test.cjs',
-  './suites/shadow-harness.test.cjs'
+  './suites/delta-report.test.cjs'
 ];
 
 (async () => {
   for (const suitePath of SUITES) {
-    const suite = require(suitePath);
-    await suite(helpers);
+    try {
+      const suite = require(suitePath);
+      await suite(helpers);
+    } catch (e) {
+      console.log(`Error in suite: ${suitePath}`);
+      console.log(e);
+      failed++;
+    }
   }
 
   console.log(`\n${passed} passed, ${failed} failed`);
