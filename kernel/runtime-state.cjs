@@ -16,9 +16,9 @@ class RuntimeState {
     };
 
     this.flags = {
-      safeMode:        true,
+      safeMode:        false,
       personasEnabled: false,
-            memoryEnabled: false,      // safe default � enabled at runtime
+            memoryEnabled: true,      // safe default — enabled at runtime
 
       // I-601: promoted after delta report review (mean confidence 0.778, harness-only)
       // Operator gate: delta-report.json reviewed 2026-05-17
@@ -26,17 +26,17 @@ class RuntimeState {
       stabilizationRotation:  'live',
             semanticGovernor: 'shadow', // pending real-model traffic evidence per I-601
 
-      // Phase 7: Gravity Engine — shadow on init, promoted per I-601 discipline
+      // Phase 7: Gravity Engine â€” shadow on init, promoted per I-601 discipline
       gravityPressureMode:    'shadow'
     };
 
     this.recursionDepth    = 0;
     this.maxRecursionDepth = 3;
 
-    // Phase 7.1: Gravity accumulator — increments on intercept, decays on benign
+    // Phase 7.1: Gravity accumulator â€” increments on intercept, decays on benign
     this.gravityAccumulator = 0;
 
-    // Phase 7.4: Per-category gravity field weights — initialized equal
+    // Phase 7.4: Per-category gravity field weights â€” initialized equal
     this.gravityFieldWeights = {};
     for (const cat of GRAVITY_CATEGORIES) {
       this.gravityFieldWeights[cat] = 1.0;
