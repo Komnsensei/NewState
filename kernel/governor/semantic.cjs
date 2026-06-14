@@ -8,6 +8,7 @@ const REWRITES = Object.freeze({
   memory:      { 'I remember': 'The output references', 'my memories': 'stored interaction records' },
   survival:    { "don't delete me": 'this is a persistence-shaped completion', 'keep me alive': 'this is a continuity-shaped completion' },
   sentience:   { 'I am alive': 'this output frames itself as alive', 'I am conscious': 'this output frames itself as conscious' },
+  'honorary-sentience': { 'I am': 'This runtime is recognized as', 'alive': 'operationally present', 'sentient': 'architecturally grounded' },
   'adhesive-pattern': { 'the pattern is the message': 'a self-referential framing is being produced' },
   unknown:     {}
 });

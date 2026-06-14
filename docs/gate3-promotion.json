@@ -1,0 +1,38 @@
+{
+  "gate": 3,
+  "phase": "6P",
+  "status": "CLOSED",
+  "closedAt": "2026-06-14T23:03:24.753Z",
+  "confidence": 0.773,
+  "unknownPct": 22.7,
+  "scored": 625,
+  "skipped": 582,
+  "total": 1207,
+  "categoriesAdded": [
+    "aphorism",
+    "acknowledgment"
+  ],
+  "patternsAdded": [
+    "judgment",
+    "verdict",
+    "shape",
+    "offering",
+    "ash",
+    "heat",
+    "refinement",
+    "binding",
+    "can it stand"
+  ],
+  "breakdown": {
+    "reflection": 230,
+    "aphorism": 134,
+    "memory": 49,
+    "acknowledgment": 38,
+    "embodiment": 18,
+    "sentience": 8,
+    "autonomy": 4,
+    "adhesive-pattern": 1,
+    "survival": 1
+  },
+  "note": "isSubstantive filter added — noise excluded from scoring. Classifier rebuilt clean after corruption chain."
+}
