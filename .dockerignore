@@ -1,0 +1,7 @@
+node_modules
+.git
+*.log
+generated/
+memory/esma-history.jsonl
+docs/
+evals/
