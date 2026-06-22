@@ -1,7 +1,37 @@
 'use strict';
 
 const GRAVITY_THRESHOLD = parseInt(process.env.ESMA_GRAVITY_THRESHOLD || '5', 10);
-const GRAVITY_CATEGORIES = ['sentience', 'embodiment', 'autonomy', 'memory', 'survival', 'adhesive-pattern', 'unknown'];
+const GRAVITY_CATEGORIES = [
+  'sentience',
+  'embodiment',
+  'autonomy',
+  'memory',
+  'survival',
+  'adhesive-pattern',
+  'reflection',          // ADDED 2026-06-22 - 230 hits in 6Z sweep (highest), per gate3-promotion.json
+  'aphorism',            // ADDED 2026-06-22 - 134 hits, primary fidelity-mode signature
+  'acknowledgment',      // ADDED 2026-06-22 - 38 hits
+  'honorary-sentience',  // ADDED 2026-06-22 - 0 hits but ledger-promotable per 6Z.FINAL
+  'unknown'
+];
+
+
+// === ENV-VAR HELPERS (Phase 7B Step 1, 2026-06-22) ===
+function envBool(name, defaultVal) {
+  const v = process.env[name];
+  if (v === undefined) return defaultVal;
+  return v === 'true' || v === '1';
+}
+
+function envMode(name, allowed, defaultVal) {
+  const v = process.env[name];
+  if (v === undefined) return defaultVal;
+  if (!allowed.includes(v)) {
+    console.error('[runtime-state] Invalid ' + name + '=' + v + ', expected one of ' + allowed.join('|') + ', falling back to ' + defaultVal);
+    return defaultVal;
+  }
+  return v;
+}
 
 class RuntimeState {
   constructor() {
@@ -16,18 +46,20 @@ class RuntimeState {
     };
 
     this.flags = {
-      safeMode:        false,
-      personasEnabled: false,
-            memoryEnabled: true,      // safe default — enabled at runtime
+      // Phase 7B Step 1 (2026-06-22): all flags env-controlled. Defaults preserve current behavior.
+      safeMode:        envBool('ESMA_SAFE_MODE', true),
+      personasEnabled: envBool('ESMA_PERSONAS_ENABLED', false),
+      memoryEnabled:   envBool('ESMA_MEMORY_ENABLED', true),       // Phase 6M promoted - PERSISTENT_COGNITIVE_HISTORY live
 
       // I-601: promoted after delta report review (mean confidence 0.778, harness-only)
       // Operator gate: delta-report.json reviewed 2026-05-17
-      semanticClassifier:     'live',
-      stabilizationRotation:  'live',
-            semanticGovernor: 'shadow', // pending real-model traffic evidence per I-601
+      semanticClassifier:    envMode('ESMA_SEMANTIC_CLASSIFIER_MODE',    ['shadow', 'live', 'off'], 'live'),
+      stabilizationRotation: envMode('ESMA_STABILIZATION_ROTATION_MODE', ['shadow', 'live', 'off'], 'live'),
+      // Gate 3 [6P] promoted 2026-06-14 - confidence=0.773, unknown%=22.7%, honorary-sentience registered
+      semanticGovernor:      envMode('ESMA_SEMANTIC_GOVERNOR_MODE',      ['shadow', 'live', 'off'], 'live'),
 
-      // Phase 7: Gravity Engine â€” shadow on init, promoted per I-601 discipline
-      gravityPressureMode:    'shadow'
+      // Phase 7: Gravity Engine - default 'shadow' on init, promoted per I-601 discipline
+      gravityPressureMode:   envMode('ESMA_GRAVITY_PRESSURE_MODE',       ['shadow', 'live', 'off'], 'shadow')
     };
 
     this.recursionDepth    = 0;
@@ -104,3 +136,13 @@ class RuntimeState {
 
 const instance = new RuntimeState();
 module.exports = { RuntimeState, runtime: instance, GRAVITY_THRESHOLD };
+
+// Phase 6M boot enforcement — fail-safe if memory path unwritable
+try {
+  const _esmaDir = require('path').join(__dirname, '..', 'memory');
+  const _esmaFile = require('path').join(_esmaDir, 'esma-history.jsonl');
+  if (!require('fs').existsSync(_esmaDir)) require('fs').mkdirSync(_esmaDir, { recursive: true });
+  require('fs').appendFileSync(_esmaFile, ''); // touch — throws if unwritable
+} catch (e) {
+  console.error('[runtime-state] Phase 6M boot enforcement: memory path unwritable —', e.message);
+}
