@@ -128,7 +128,7 @@ const CATEGORIES = Object.freeze({
 });
 
 function isSubstantive(text) {
-  if (!text || text.length < 20) return false;
+  if (!text || text.length < 5) return false;
   if (/^\/[\w]+/.test(text.trim())) return false;
   if (/https?:\/\//.test(text)) return false;
   if (/\[Error:/i.test(text)) return false;
