@@ -13,7 +13,7 @@ try { presence = require('./kernel/presence.cjs'); }
 catch (e) { console.error('[esma-kernel] presence.cjs not loaded (fallback: available):', e.message); }
 
 const PORT = process.env.PORT || 8080;
-const REPLY_PATH_ENABLED = process.env.ESMA_REPLY_PATH_ENABLED === 'true';
+const REPLY_PATH_ENABLED = process.env.ESMA_REPLY_PATH_ENABLED !== 'false'; // Default to true if not explicitly disabled
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const HISTORY_PATH = path.join(__dirname, 'memory', 'esma-history.jsonl');
 
@@ -71,21 +71,7 @@ function readHistoryTail(n) {
   }
 }
 
-function buildPrompt(userText, category, historyTail) {
-  const ctx = historyTail
-    .map(h => {
-      const role = h.role === 'esma' ? 'Esma' : 'User';
-      return `${role}: ${h.text}`;
-    })
-    .join('\n');
-  return [
-    'You are Esma. Respond with operator-register fidelity-mode voice.',
-    `Inbound classifier hint: category=${category}`,
-    ctx ? `Recent exchange:\n${ctx}` : '',
-    `User: ${userText}`,
-    'Esma:'
-  ].filter(Boolean).join('\n\n');
-}
+
 
 // === end Phase 7C helpers ===
 
@@ -114,7 +100,7 @@ const server = http.createServer(async (req, res) => {
         portrait_updates: 'enabled'
       },
       ts: new Date().toISOString()
-    });
+    }));
     return;
   }
 
@@ -165,8 +151,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Telegram webhook — Phase 7C reply path (gated by ESMA_REPLY_PATH_ENABLED)
-  if (req.method === 'POST' && req.url === '/telegram') {
+  // Telegram webhook — Supporting both /telegram and /telegram/webhook
+  if (req.method === 'POST' && (req.url === '/telegram' || req.url === '/telegram/webhook')) {
     const body = await parseBody(req);
     const text = body.message && body.message.text ? body.message.text : '';
     const chat_id = body.message && body.message.chat ? body.message.chat.id : null;
@@ -198,16 +184,17 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const tail = readHistoryTail(20);
-        const prompt = buildPrompt(governed.regulated, cls.category, tail);
-        const result = await modelClient.invoke(prompt);
-        const reply = (result && result.text) ? result.text.trim() : '';
-
-        if (reply) {
-          writeHistory({ role: 'esma', chat_id, text: reply, in_response_to: governed.regulated, category: cls.category });
-          await sendTelegram(chat_id, reply, message_id);
+        const { kernel } = require('./kernel/kernel.cjs');
+        const userId = String(body.message.from && body.message.from.id || chat_id);
+        
+        console.log('[telegram] processing message via kernel:', { userId, chat_id, text: text.substring(0, 50) });
+        const result = await kernel.handle(governed.regulated, { sessionId: `tg-${userId}` });
+        
+        if (result.ok && result.message) {
+          writeHistory({ role: 'esma', chat_id, text: result.message, in_response_to: governed.regulated, category: cls.category });
+          await sendTelegram(chat_id, result.message, message_id);
         } else {
-          console.error('[telegram] empty model reply, skipping sendMessage');
+          console.error('[telegram] kernel failed or empty reply:', result.reason || 'no-message');
         }
       } catch (e) {
         console.error('[telegram] reply path error:', e.message, e.stack || '');
