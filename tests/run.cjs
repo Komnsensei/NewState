@@ -90,8 +90,9 @@ const SUITES = [
   './suites/shadow-mode.test.cjs',
   './suites/classifier.test.cjs',
   './suites/stabilization-rotation.test.cjs',
-  './suites/delta-report.test.cjs'
-];
+    './suites/delta-report.test.cjs',
+    './suites/phase-8.test.cjs'
+  ];
 
 (async () => {
   for (const suitePath of SUITES) {

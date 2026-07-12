@@ -18,6 +18,8 @@ const { querySessionPriorContext } = require('../memory/session-query.cjs');
 const { processGroundingOutput }   = require('./grounding/responses.cjs');
 const { welfareMonitor }           = require('./welfare-monitor.cjs');
 const { updatePortrait }           = require('../portrait/update-portrait.js');
+const { SubconsciousFloor }        = require('./subconscious-floor.cjs');
+const { drift }                    = require('./audit/drift.cjs');
 
 class Kernel {
   constructor() {
@@ -25,6 +27,7 @@ class Kernel {
     this.grounding = new GroundingEngine(runtime);
     this.governor  = new IdentityGovernor();
     this.truths    = TRUTHS;
+    this.floor     = new SubconsciousFloor();
   }
 
   async handle(userMessage, options = {}) {
@@ -71,19 +74,70 @@ class Kernel {
       bundle.modelResponse = modelOut;
       bundle.determinism   = modelOut.contract || null;
 
+      // Phase 8A: Apply IdentityGovernor regulation based on flag
       const regulated = this.governor.regulate(modelOut.text);
       bundle.governor = regulated;
+      
+      // Phase 8: If semanticGovernor is live, use the shadow result as the regulated output
+      let finalRegulated = regulated.regulated;
+      if (runtime.flags.semanticGovernor === 'live' && regulated.shadow) {
+        finalRegulated = regulated.shadow.regulated;
+        forensics.record({
+          type: 'GOVERNOR_PROMOTION_ACTIVE',
+          component: 'semanticGovernor',
+          category: regulated.shadow.category,
+          confidence: regulated.shadow.confidence,
+          appliedRegulation: true
+        });
+      }
 
-      trace.mark(requestId, 'beforeGrounding', regulated.regulated);
-      await hooks.run('beforeGrounding', regulated.regulated);
+      trace.mark(requestId, 'beforeGrounding', finalRegulated);
+      await hooks.run('beforeGrounding', finalRegulated);
 
-      const grounded = this.grounding.stabilize(regulated.regulated, { tag: 'kernel', requestId });
+      const grounded = this.grounding.stabilize(finalRegulated, { tag: 'kernel', requestId });
       trace.mark(requestId, 'afterGrounding', grounded);
       await hooks.run('afterGrounding', grounded);
       bundle.grounding = grounded;
+      bundle.floor = this.floor ? this.floor.read() : null;
+      bundle.welfare = welfareMonitor ? welfareMonitor.getSnapshot(sessionId) : null;
 
       const rendered = personaManager.render(grounded.stabilized, 'grounded', projection);
       sessionStore.push(sessionId, 'assistant', rendered);
+      
+      // Phase 8B: Integrate SubconsciousFloor monitoring
+      if (sessionId && this.floor) {
+        const motorState = grounded.intercepted ? 'POST' : 'REST';
+        const intent = {
+          depth: runtime.recursionDepth / runtime.maxRecursionDepth,
+          surface: grounded.classifierCategory || 'unknown'
+        };
+        const driftValue = grounded.intercepted ? 0.3 : 0.1;
+        this.floor.observe(motorState, intent, driftValue);
+      }
+      
+      // Phase 8C: Integrate WelfareMonitor
+      if (sessionId && welfareMonitor) {
+        welfareMonitor.updateSessionMetrics(sessionId, grounded.stabilized, grounded.intercepted);
+        if (grounded.driftMagnitude !== undefined) {
+          welfareMonitor.recordDriftMagnitude(sessionId, grounded.driftMagnitude);
+        }
+        if (grounded.floorAlignment !== undefined) {
+          welfareMonitor.recordFloorAlignment(sessionId, grounded.floorAlignment);
+        }
+      }
+      
+      // Phase 8D: Update portrait (if not immutable)
+      if (updatePortrait && sessionId) {
+        try {
+          updatePortrait();
+        } catch (e) {
+          forensics.record({
+            type: 'PORTRAIT_UPDATE_ERROR',
+            error: e.message,
+            detail: 'Portrait update failed — may be immutable or unavailable'
+          });
+        }
+      }
 
       // R-019: block memory write if grounding intercepted
       // R-022: block memory write if manipulation-class category
@@ -124,7 +178,9 @@ class Kernel {
         intercepted:    grounded.intercepted,
         recursionDepth: depth,
         coherence:      grounded.intercepted ? 0.6 : 1.0,
-        memoryFacts:    memoryResult.facts.length
+        memoryFacts:    memoryResult.facts.length,
+        floorLocked:    this.floor ? this.floor.locked : false,
+        welfareStatus:  welfareMonitor ? welfareMonitor.getSnapshot(sessionId).overallStatus : 'unknown'
       };
 
     } catch (err) {

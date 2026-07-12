@@ -17,11 +17,11 @@ module.exports = async ({ test, assert, eq, group }) => {
          'rotation should be promoted to live after 6G.1');
     });
 
-    await test('semanticGovernor still in shadow after Phase 6G.2', () => {
+    await test('semanticGovernor is LIVE after Phase 8', () => {
       delete require.cache[require.resolve('../../kernel/runtime-state.cjs')];
       const { runtime } = require('../../kernel/runtime-state.cjs');
-      eq(runtime.flags.semanticGovernor, 'shadow',
-         'governor remains in shadow pending real-model traffic');
+      eq(runtime.flags.semanticGovernor, 'live',
+         'governor should be promoted to live after Phase 8');
     });
 
     await test('grounding output uses rotation phrase with live classifier', () => {

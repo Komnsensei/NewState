@@ -101,14 +101,20 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify({
       status: 'ok',
       service: 'esma-kernel',
-      phase: '7A',
+      phase: '8-sovereign-continuity',
       uptime_s: Math.floor(process.uptime()),
       history_entries: lines,
       substrate_enabled: gcs.enabled,
       firestore_enabled: firestore.enabled,
       satellite: '99.SAT.PASSION',
+      phase_8_components: {
+        identity_governor: 'active',
+        subconscious_floor: 'wired',
+        welfare_monitor: 'monitoring',
+        portrait_updates: 'enabled'
+      },
       ts: new Date().toISOString()
-    }));
+    });
     return;
   }
 

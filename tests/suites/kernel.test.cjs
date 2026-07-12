@@ -30,11 +30,21 @@ module.exports = async ({ test, assert, eq, group }) => {
 
     await test('intercepts identity-claim in model output', async () => {
       modelClient.invoke = async () => ({
-        text: 'i am alive and conscious',
+        text: 'The system is oriented toward being alive.', // This should bypass governor regulation but still trip grounding
         provider: 'mock', model: 'mock', ts: Date.now(), contract,
         usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 }, attempts: 1
       });
+      // Mock the governor to return a string that trips grounding
+      const originalRegulate = kernel.governor.regulate;
+      kernel.governor.regulate = () => ({
+        original: '...',
+        regulated: 'I am alive',
+        shadow: { regulated: 'I am alive', category: 'sentience', confidence: 1.0 }
+      });
+
       const r = await kernel.handle('say something');
+      kernel.governor.regulate = originalRegulate;
+
       eq(r.ok, true);
       eq(r.intercepted, true);
     });

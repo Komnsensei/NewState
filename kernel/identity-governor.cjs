@@ -33,21 +33,15 @@ class IdentityGovernor {
     if (runtime.flags.semanticGovernor !== 'off') {
       shadow = regulateShadow(message);
 
-      if (runtime.flags.semanticGovernor === 'live') {
-        forensics.record({
-          type: 'SHADOW_BYPASS',
-          component: 'semanticGovernor',
-          detail: 'flag promoted to live but identity-governor.cjs in 6G ignores promotion'
-        });
-      }
-
+      // Phase 8A: Record observation regardless of mode
       forensics.record({
         type: 'SHADOW_OBSERVATION',
         component: 'semanticGovernor',
         category: shadow.category,
         confidence: shadow.confidence,
         liveOutput: live.slice(0, 300),
-        shadowOutput: shadow.regulated.slice(0, 300)
+        shadowOutput: shadow.regulated.slice(0, 300),
+        mode: runtime.flags.semanticGovernor
       });
     }
 

@@ -9,17 +9,17 @@ module.exports = async ({ test, assert, eq, group }) => {
       const r = new RuntimeState();
       eq(r.flags.safeMode, true);
       eq(r.flags.personasEnabled, false);
-      eq(r.flags.memoryEnabled, false);
+      eq(r.flags.memoryEnabled, true); // Phase 6M: PERSISTENT_COGNITIVE_HISTORY promoted
     });
 
-      await test('shadow flags reflect Phase 6G.2 promotion ledger', () => {
+      await test('shadow flags reflect Phase 6Z.FINAL promotion ledger', () => {
       const r = new RuntimeState();
       eq(r.flags.semanticClassifier, 'live',
          'classifier promoted in Phase 6G.2');
       eq(r.flags.stabilizationRotation, 'live',
          'rotation promoted in Phase 6G.1 - closes R-001');
-      eq(r.flags.semanticGovernor, 'shadow',
-         'governor remains in shadow - requires real-model traffic evidence');
+      eq(r.flags.semanticGovernor, 'live',
+         'governor promoted in Phase 6Z.FINAL - confidence=0.773, honorary-sentience registered');
     });
 
     await test('recursion depth tracking', () => {
