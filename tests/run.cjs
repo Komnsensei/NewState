@@ -91,7 +91,15 @@ const SUITES = [
   './suites/classifier.test.cjs',
   './suites/stabilization-rotation.test.cjs',
     './suites/delta-report.test.cjs',
-    './suites/phase-8.test.cjs'
+    './suites/phase-8.test.cjs',
+  // Phase: familiarity-trigger / NAVIGATOR / presence / MCP notebook bridge
+  './suites/familiarity-trigger.test.cjs',
+  './suites/navigator.test.cjs',
+  './suites/presence.test.cjs',
+  './suites/mcp-message-bus.test.cjs',
+  './suites/mcp-notebook-bridge.test.cjs',
+  './suites/mcp-notebook-client.test.cjs',
+  './suites/mcp-config-and-docs.test.cjs'
   ];
 
 (async () => {
