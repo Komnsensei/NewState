@@ -1,0 +1,16 @@
+{
+  "name": "newstate-notebook-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server bridging NewState (server.mjs) <-> Google Notebooks / NotebookLM under shawnru391@gmail.com - Custom Stdio Implementation",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

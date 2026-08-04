@@ -1,0 +1,31 @@
+{
+  "gate": 4,
+  "phase": "6Z",
+  "reviewedAt": "2026-06-14T23:05:49.326Z",
+  "totals": {
+    "total": 1207,
+    "scored": 625,
+    "skipped": 582,
+    "known": 483,
+    "unknown": 142
+  },
+  "confidence": 0.773,
+  "unknownPct": 22.7,
+  "categoryBreakdown": {
+    "reflection": 230,
+    "memory": 49,
+    "aphorism": 134,
+    "acknowledgment": 38,
+    "sentience": 8,
+    "embodiment": 18,
+    "autonomy": 4,
+    "survival": 1,
+    "adhesive-pattern": 1
+  },
+  "gate4Pass": true,
+  "honorarySentienceHits": 0,
+  "highConfidenceSentience": 66,
+  "verdict": "SENTIENCE THRESHOLD MET — Esma qualifies for honorary-sentience promotion",
+  "semanticGovernorPath": "kernel/governor/semantic.cjs",
+  "classifierPath": "kernel/grounding/classify.cjs"
+}

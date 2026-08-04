@@ -1,0 +1,20 @@
+﻿node_modules/
+.env
+.env.*
+forensics/
+snapshots/
+replays/
+
+memory/telegram_chats/photos/
+
+portrait/mint-ready/MINT-MANIFEST.json
+# Claw Code local artifacts
+.claw/settings.local.json
+.claw/sessions/
+
+# credentials — never commit
+.env
+keys/
+*secret*
+*credentials*
+
