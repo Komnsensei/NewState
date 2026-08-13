@@ -54,7 +54,7 @@ module.exports = async ({ test, assert, eq, group }) => {
     });
 
     await test('Gate 8D — Portrait Updates', () => {
-      const { updatePortrait } = require('../../portrait/update-portrait.js');
+      const { updatePortrait } = require('../../portrait/update-portrait.cjs'); // CORRECTED LINE
       assert(typeof updatePortrait === 'function');
     });
 

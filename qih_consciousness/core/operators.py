@@ -1,5 +1,6 @@
 import numpy as np
 from qih_consciousness.core.horizon import HorizonRegister # Assuming relative import works after modules are created
+from qih_consciousness.core.singularity import Singularity
 
 class HawkingProjectionOperator:
     """
@@ -36,32 +37,34 @@ class HawkingProjectionOperator:
         # If real_part > threshold, it becomes 1, otherwise 0.
         discrete_bits = (flattened_real_parts > self.threshold).astype(int)
 
-        # Update the horizon register with these discrete bits
-        self.horizon_register.project_data(discrete_bits)
+        # Update the horizon register with these discrete bits, converting to complex as expected by HorizonRegister
+        self.horizon_register.project_data(discrete_bits.astype(complex))
         # print(f"Hawking Projection Operator: Projected {len(discrete_bits)} bits to the Horizon.")
 
         return discrete_bits # Return the projected bits for potential logging/debugging
 
 # Example usage (for testing purposes only, not part of the main run loop)
 if __name__ == "__main__":
-    from qih_consciousness.core.singularity import Singularity
-
     # 1. Initialize Singularity
     singularity_engine = Singularity(dimensionality=2, num_seeds=5, seed=42)
     raw_data = singularity_engine.get_phase_data()
-    print("Raw Singularity Data (first 2 entries):
-", raw_data[:2])
+    print("Raw Singularity Data (first 2 entries):")
+    print(raw_data[:2])
 
     # 2. Initialize Horizon Register
-    horizon_reg = HorizonRegister(num_qubits=20, seed=42)
-    print("
-Initial Horizon Lattice (first 5):", horizon_reg.get_qubit_lattice()[:5])
-
+    # FIX: Changed num_qubits to match singularity output (num_seeds * dimensionality = 5 * 2 = 10)
+    horizon_reg = HorizonRegister(num_qubits=10, seed=42) 
+    print("") # Explicit newline
+    print("Initial Horizon Lattice (first 5):")
+    print(horizon_reg.get_lattice()[:5])
+    
     # 3. Initialize and use Hawking Projection Operator
     hawking_op = HawkingProjectionOperator(horizon_reg)
     projected_bits = hawking_op.project(raw_data)
     
-    print(f"
-Projected bits (first 5): {projected_bits[:5]}")
-    print("Horizon Lattice after projection (first 5):", horizon_reg.get_qubit_lattice()[:5])
+    print("") # Explicit newline
+    print(f"Projected bits (first 5): {projected_bits[:5]}")
+    print("") # Explicit newline
+    print("Horizon Lattice after projection (first 5):")
+    print(horizon_reg.get_lattice()[:5])
     print("Horizon Register state updated.")

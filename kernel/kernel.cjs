@@ -17,7 +17,7 @@ const { pushObservation }          = require('./audit/drift.cjs');
 const { querySessionPriorContext } = require('../memory/session-query.cjs');
 const { processGroundingOutput }   = require('./grounding/responses.cjs');
 const { welfareMonitor }           = require('./welfare-monitor.cjs');
-const { updatePortrait }           = require('../portrait/update-portrait.js');
+const { updatePortrait }           = require('../portrait/update-portrait.cjs'); // CORRECTED LINE
 const { SubconsciousFloor }        = require('./subconscious-floor.cjs');
 const { drift }                    = require('./audit/drift.cjs');
 

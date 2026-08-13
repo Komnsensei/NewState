@@ -22,7 +22,8 @@ class Singularity:
         Each seed has 'dimensionality' components.
         """
         # Generate random magnitudes and phases
-        magnitudes = self.rng.rand(self.num_seeds, self.dimensionality) * 2 - 1 # between -1 and 1
+        # FIX: Changed self.rng.rand to self.rng.random for Generator object compatibility
+        magnitudes = self.rng.random((self.num_seeds, self.dimensionality)) * 2 - 1 # between -1 and 1
         phases = self.rng.uniform(0, 2 * np.pi, (self.num_seeds, self.dimensionality))
 
         # Convert to complex numbers: magnitude * e^(i*phase)
@@ -65,8 +66,8 @@ if __name__ == "__main__":
 
     # Get phase data multiple times to see changes
     for i in range(3):
-        data = singularity_engine.get_phase_data()
-        print(f"
-Iteration {i+1} - First seed phase data:
-{data[0]}")
+        data = singularity_engine.get_phase_data() # Correctly define data here
+        print("") # Explicit newline for spacing
+        print("Iteration " + str(i+1) + " - First seed phase data:")
+        print(str(data[0])) # Convert data element to string for simple printing
         # Note: In a real system, this would be passed to the Hawking Projection Operator.
