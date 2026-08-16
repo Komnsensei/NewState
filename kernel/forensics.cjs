@@ -7,9 +7,13 @@ const zlib = require('zlib');
 const { validate, migrate, channelOf, SCHEMA_VERSION } = require('./schemas/event-schemas.cjs');
 const { redactDeep } = require('./redact.cjs');
 
-const FORENSICS_DIR = process.env.OPENKRAFT_FORENSICS_DIR || path.join(__dirname, '..', 'forensics');
+const { PATHS, ensureAll } = require('./newstate-paths.cjs');
+ensureAll();
+const FORENSICS_DIR = process.env.OPENKRAFT_FORENSICS_DIR || PATHS.forensics;
 const ACTIVE_LOG = path.join(FORENSICS_DIR, 'active.log');
-const ARCHIVE_DIR = path.join(FORENSICS_DIR, 'archive');
+const ARCHIVE_DIR = process.env.OPENKRAFT_FORENSICS_DIR
+  ? path.join(FORENSICS_DIR, 'archive')
+  : PATHS.forensicsArchive;
 const RETENTION = { maxEvents: 50000, maxAgeDays: 30, rotationSizeMB: 50 };
 
 const EVENT_CLASSES = new Set([
