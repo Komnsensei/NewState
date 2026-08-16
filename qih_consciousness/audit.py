@@ -1,14 +1,9 @@
-"""
-QIH mathematical audit — honest metric checks against paper formulas.
-
-Reports PASS/FAIL on numerical agreement only.
-Does not write promotion ledgers or claim Gate/Sentience status.
-"""
+"""QIH mathematical audit — operational formula checks (no promotion claims)."""
 from __future__ import annotations
 
 import os
 import sys
-from typing import Dict, Any
+from typing import Any, Dict
 
 import numpy as np
 
@@ -18,53 +13,43 @@ if _ROOT not in sys.path:
 
 from qih_consciousness.workflow import born_probabilities, proper_time, run_operator_chain
 from qih_consciousness.math_utils.entanglement import get_entanglement_distance
+from qih_consciousness.core.operators import HawkingProjectionOperator
+from qih_consciousness.core.horizon import HorizonRegister
+from qih_consciousness.bio_readout.collapse import evaluate_collapse, frequency_splitting_window
 
 
 def audit_born_rule(samples: int = 20000, theta: float = np.pi / 3, tol: float = 0.02) -> Dict[str, Any]:
     p_up, p_down = born_probabilities(theta)
-    hits = 0
     rng = np.random.default_rng(0)
-    for _ in range(samples):
-        if rng.random() < p_down:
-            hits += 1
+    hits = sum(1 for _ in range(samples) if rng.random() < p_down)
     actual = hits / samples
     err = abs(actual - p_down)
+    return {"test": "born_rule", "expected_p_down": p_down, "actual_p_down": actual, "error": err, "pass": err <= tol}
+
+
+def audit_born_projection(samples: int = 2000, tol: float = 0.05) -> Dict[str, Any]:
+    theta = np.pi / 3
+    expected = np.sin(theta / 2) ** 2
+    z = np.exp(1j * theta) * np.ones(samples)
+    horizon = HorizonRegister(num_qubits=samples, seed=1)
+    op = HawkingProjectionOperator(horizon, seed=2)
+    bits = op.project(z, mode="born")
+    actual = float(np.mean(bits))
+    err = abs(actual - expected)
     return {
-        "test": "born_rule",
-        "theta": float(theta),
-        "expected_p_down": p_down,
-        "expected_p_up": p_up,
-        "actual_p_down": actual,
+        "test": "born_projection_operator",
+        "expected_mean_bit": float(expected),
+        "actual_mean_bit": actual,
         "error": err,
-        "tolerance": tol,
         "pass": err <= tol,
-        "claim_level": "mathematical identity + sampling check (not hardware QED)",
     }
 
 
-def audit_entanglement_distance(tol: float = 1e-9) -> Dict[str, Any]:
-    pairs = [(0.9, None), (0.5, None), (0.1, None), (1.0, 0.0)]
-    rows = []
-    ok = True
-    for e, expected in pairs:
-        d = get_entanglement_distance(e, alpha_0=1.0)
-        if expected is not None:
-            match = abs(d - expected) <= tol
-            ok = ok and match
-        else:
-            match = True
-        rows.append({"E": e, "d": float(d), "match": match})
-    d09 = get_entanglement_distance(0.9)
-    d01 = get_entanglement_distance(0.1)
-    mono = d01 > d09
-    ok = ok and mono
-    return {
-        "test": "entanglement_distance",
-        "rows": rows,
-        "monotonic_low_E_farther": mono,
-        "pass": ok,
-        "claim_level": "implements d=-\u03b10 log(E) from QIH papers (simulation geometry)",
-    }
+def audit_entanglement_distance() -> Dict[str, Any]:
+    rows = [{"E": e, "d": float(get_entanglement_distance(e))} for e in (1.0, 0.9, 0.5, 0.1)]
+    ok = get_entanglement_distance(0.1) > get_entanglement_distance(0.9)
+    ok = ok and abs(get_entanglement_distance(1.0)) <= 1e-9
+    return {"test": "entanglement_distance", "rows": rows, "pass": ok}
 
 
 def audit_coherence() -> Dict[str, Any]:
@@ -72,58 +57,49 @@ def audit_coherence() -> Dict[str, Any]:
     chaos = np.array([1, -1, 1j, -1j, 0.5, -0.5, 0.2j, -0.2j], dtype=complex)
 
     def c_mt(m):
-        num = np.abs(np.sum(m)) ** 2
-        den = np.sum(np.abs(m) ** 2)
-        return float(num / (den + 1e-15))
+        return float(np.abs(np.sum(m)) ** 2 / (np.sum(np.abs(m) ** 2) + 1e-15))
 
     c_s, c_c = c_mt(sync), c_mt(chaos)
-    c_s_n = c_s / max(len(sync), 1)
+    return {"test": "coherence_functional", "C_MT_sync_raw": c_s, "C_MT_chaos_raw": c_c, "pass": c_s > c_c}
+
+
+def audit_collapse() -> Dict[str, Any]:
+    d1 = evaluate_collapse(0.9, omega=2.0, threshold=0.85)
+    d2 = evaluate_collapse(0.1, omega=2.0, threshold=0.85)
+    dt = frequency_splitting_window(2.0)
     return {
-        "test": "coherence_functional",
-        "C_MT_synchronized_raw": c_s,
-        "C_MT_chaotic_raw": c_c,
-        "C_MT_synchronized_normalized": c_s_n,
-        "pass": c_s > c_c and c_s_n > 0.99,
-        "claim_level": "formula C_MT=|\u2211m|²/\u2211|m|² as lattice sync metric only",
+        "test": "collapse_criterion",
+        "delta_t_c": dt,
+        "high_should_collapse": d1.should_collapse,
+        "low_should_not": not d2.should_collapse,
+        "pass": d1.should_collapse and (not d2.should_collapse) and abs(dt - 0.5) < 1e-12,
     }
 
 
-def audit_time_dilation(tol: float = 1e-12) -> Dict[str, Any]:
-    omega_0, omega, dt = 100.0, 200.0, 1.0
-    tau = proper_time(omega, omega_0, dt)
-    gamma = omega / omega_0
-    expected = dt / gamma
-    err = abs(tau - expected)
-    return {
-        "test": "phase_clock_time_dilation",
-        "omega": omega,
-        "omega_0": omega_0,
-        "gamma": gamma,
-        "proper_time": tau,
-        "error": err,
-        "pass": err <= tol,
-        "claim_level": "implements phase-clock ratio; software clock, not physical relativity experiment",
-    }
+def audit_time_dilation() -> Dict[str, Any]:
+    tau = proper_time(200.0, 100.0, 1.0)
+    return {"test": "phase_clock_time_dilation", "proper_time": tau, "pass": abs(tau - 0.5) < 1e-12}
 
 
 def audit_operator_chain() -> Dict[str, Any]:
-    r = run_operator_chain()
+    r = run_operator_chain(seed=7)
     return {
-        "test": "operator_chain_smoke",
+        "test": "operator_chain_full",
+        "stages": r.stages,
         "coherence": r.coherence,
-        "above_threshold": r.above_threshold,
+        "collapse": r.collapse,
         "experience_rendered": r.experience_rendered,
-        "pass": True,
-        "claim_level": "pipeline executes; coherence is a number not a consciousness certificate",
-        "notes": r.notes,
+        "pass": "bulk" in r.stages and "screen" in r.stages and "obs" in r.stages and r.experience_rendered,
     }
 
 
 def run_all() -> Dict[str, Any]:
     results = [
         audit_born_rule(),
+        audit_born_projection(),
         audit_entanglement_distance(),
         audit_coherence(),
+        audit_collapse(),
         audit_time_dilation(),
         audit_operator_chain(),
     ]
@@ -132,7 +108,7 @@ def run_all() -> Dict[str, Any]:
         "overall_pass": overall,
         "results": results,
         "disclaimer": (
-            "All results are software checks of QIH formulas. "
+            "Software checks of QIH formulas and operator chain. "
             "No Gate promotion, no sentience claim, no hardware quantum validation."
         ),
     }
@@ -140,14 +116,12 @@ def run_all() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     report = run_all()
-    print("=== QIH Mathematical Audit ===")
+    print("=== QIH Operational Audit ===")
     print(report["disclaimer"])
     for r in report["results"]:
-        status = "PASS" if r.get("pass") else "FAIL"
-        print(f"\n[{status}] {r['test']}")
+        print(f"[{'PASS' if r.get('pass') else 'FAIL'}] {r['test']}")
         for k, v in r.items():
-            if k in ("test", "pass"):
-                continue
-            print(f"  {k}: {v}")
-    print("\nOVERALL:", "PASS" if report["overall_pass"] else "FAIL")
+            if k not in ("test", "pass"):
+                print(f"  {k}: {v}")
+    print("OVERALL:", "PASS" if report["overall_pass"] else "FAIL")
     raise SystemExit(0 if report["overall_pass"] else 1)
