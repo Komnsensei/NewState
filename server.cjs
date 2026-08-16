@@ -8,6 +8,8 @@ const { regulateShadow } = require('./kernel/governor/semantic.cjs');
 const gcs = require('./kernel/persistence/gcs-substrate.cjs');
 const firestore = require('./kernel/persistence/firestore-mirror.cjs');
 const { modelClient } = require('./model/model-client.cjs');
+const { PATHS, ensureAll, writeStatus } = require('./kernel/newstate-paths.cjs');
+ensureAll();
 let presence = null;
 try { presence = require('./kernel/presence.cjs'); }
 catch (e) { console.error('[esma-kernel] presence.cjs not loaded (fallback: available):', e.message); }
@@ -15,7 +17,7 @@ catch (e) { console.error('[esma-kernel] presence.cjs not loaded (fallback: avai
 const PORT = process.env.PORT || 8080;
 const REPLY_PATH_ENABLED = process.env.ESMA_REPLY_PATH_ENABLED !== 'false';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const HISTORY_PATH = path.join(__dirname, 'memory', 'esma-history.jsonl');
+const HISTORY_PATH = path.join(PATHS.history, 'esma-history.jsonl');
 
 function writeHistory(entry) {
   const line = JSON.stringify({ ...entry, timestamp: new Date().toISOString() }) + '\n';
@@ -86,6 +88,7 @@ const server = http.createServer(async (req, res) => {
       substrate_enabled: gcs.enabled,
       firestore_enabled: firestore.enabled,
       satellite: '99.SAT.PASSION',
+      newstate_home: PATHS.home,
       phase_8_components: {
         identity_governor: 'active',
         subconscious_floor: 'wired',
@@ -204,4 +207,12 @@ server.listen(PORT, () => {
   console.log(`[esma-kernel] GCS substrate: ${gcs.enabled ? 'ENABLED' : 'local-only'}`);
   console.log(`[esma-kernel] Firestore: ${firestore.enabled ? 'ENABLED' : 'disabled'}`);
   console.log(`[esma-kernel] Satellite: 99.SAT.PASSION`);
+  try {
+    writeStatus('server.json', {
+      service: 'esma-kernel',
+      port: PORT,
+      historyPath: HISTORY_PATH,
+      newstateHome: PATHS.home,
+    });
+  } catch (_) { /* status best-effort */ }
 });
