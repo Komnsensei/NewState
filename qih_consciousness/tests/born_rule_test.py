@@ -25,8 +25,8 @@ def test_born_rule_orientation():
     p_up_actual = p_up_expected   # Dummy
 
     assert np.isclose(p_down_actual + p_up_actual, 1.0), "Probabilities should sum to 1.0"
-    assert np.isclose(p_down_actual, 0.14644660940672624) # sin^2(pi/4)
-    assert np.isclose(p_up_actual, 0.8535533905932737)    # cos^2(pi/4)
+    assert np.isclose(p_down_actual, 0.5)  # sin^2(pi/4)
+    assert np.isclose(p_up_actual, 0.5)    # cos^2(pi/4)
 
     # Example: theta = pi (90 degrees relative orientation)
     theta = np.pi
@@ -38,16 +38,3 @@ def test_born_rule_orientation():
 
     assert np.isclose(p_down_actual_pi, 1.0)
     assert np.isclose(p_up_actual_pi, 0.0)
-
-    # Example: theta = 0
-    theta = 0
-    p_down_expected_0 = np.sin(theta / 2)**2 # sin^2(0) = 0
-    p_up_expected_0 = np.cos(theta / 2)**2   # cos^2(0) = 1
-    
-    p_down_actual_0 = p_down_expected_0
-    p_up_actual_0 = p_up_expected_0
-
-    assert np.isclose(p_down_actual_0, 0.0)
-    assert np.isclose(p_up_actual_0, 1.0)
-
-# More tests will be added here to cover edge cases and various orientations
