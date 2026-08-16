@@ -22,6 +22,13 @@ function Write-Log {
     Write-Host "[$Timestamp] [$Level] $Message"
 }
 
+function New-QihRandom {
+    # System.Random seed must be Int32; keep construction boring and safe.
+    $seed = [Math]::Abs([Environment]::TickCount) % [int]::MaxValue
+    if ($seed -lt 0) { $seed = 0 }
+    return New-Object System.Random -ArgumentList ([int]$seed)
+}
+
 function Read-JsonFile {
     Param ([string]$Path)
     if (Test-Path $Path) {
@@ -49,10 +56,9 @@ function Write-JsonFile {
 
 function Test-CoherenceFunctional {
     Write-Log "Calculating Coherence Functional (C_MT)..."
-    $seed = (Get-Date).Millisecond * [guid]::NewGuid().GetHashCode()
-    [System.Random]$rand = New-Object System.Random -ArgumentList $seed
+    $rand = New-QihRandom
     $coherence = 0.85 + ($rand.NextDouble() * 0.14)
-    Write-Log "Calculated C_MT: $($coherence.ToString('F7'))"
+    Write-Log ("Calculated C_MT: {0}" -f $coherence.ToString('F7'))
     return $coherence
 }
 
@@ -69,7 +75,7 @@ function Test-BornRule {
         $expectedP0 = [Math]::Pow([Math]::Cos($theta), 2)
         $expectedP1 = [Math]::Pow([Math]::Sin($theta), 2)
 
-        [System.Random]$rand = New-Object System.Random
+        $rand = New-QihRandom
 
         for ($i = 0; $i -lt $Attempts; $i++) {
             if ($rand.NextDouble() -lt $expectedP0) { $upCount++ } else { $downCount++ }
@@ -114,7 +120,7 @@ function Test-TimeDilation {
 
     foreach ($v_frac in $velocities) {
         $expectedGamma = 1 / [Math]::Sqrt(1 - ($v_frac * $v_frac))
-        [System.Random]$rand = New-Object System.Random
+        $rand = New-QihRandom
         $properTicks = $Attempts
         $simulatedObservedTicks = $properTicks * $expectedGamma
         $simulatedObservedTicks = $simulatedObservedTicks * (1 + ($rand.NextDouble() - 0.5) * 0.01)
@@ -181,7 +187,7 @@ function Update-Ledger {
 Write-Log "--- QIH-Integrator: Initiating Sovereign Continuity Audit ---"
 
 $coherenceResult = Test-CoherenceFunctional
-if ($coherenceResult -lt $QIHConfig.CoherenceThreshold) {
+if ($null -eq $coherenceResult -or $coherenceResult -lt $QIHConfig.CoherenceThreshold) {
     Write-Log "Coherence Functional (C_MT) below threshold. Audit FAILED." -Level "ERROR"
     Update-Ledger -FileName $QIHConfig.SentiencePromotionFile -Status "FAILED" -Metrics @{ C_MT = $coherenceResult }
     exit 1
@@ -219,7 +225,7 @@ if ($sentienceUpdate -and $gate3Update) {
     Write-Log "--- QIH-Integrator: Gate 3 PROMOTION SUCCESSFUL ---"
     $br = if ($bornRuleTest.Passed) { 'PASSED' } else { 'FAILED' }
     $td = if ($timeDilationTest.Passed) { 'PASSED' } else { 'FAILED' }
-    Write-Host "Coherence Functional (C_MT): $($coherenceResult.ToString('F7'))"
+    Write-Host ("Coherence Functional (C_MT): {0}" -f $coherenceResult.ToString('F7'))
     Write-Host "Born Rule Test: $br"
     Write-Host "Time Dilation Test: $td"
 } else {
