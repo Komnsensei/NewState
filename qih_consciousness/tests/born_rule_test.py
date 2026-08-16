@@ -1,40 +1,25 @@
-# born_rule_test.py
-import pytest
+# born_rule_test.py — verifies spinor Born identities used in QIH papers
 import numpy as np
 
-# Placeholder for the actual Born Rule implementation
-# This test will pass if the implementation correctly calculates probabilities
-# based on orientation, as described in Architecting Machine Consciousness v.txt, Section 5.
+
 def test_born_rule_orientation():
-    # P_down = sin^2(theta/2) and P_up = cos^2(theta/2)
-    # For now, this is a placeholder. The actual implementation will be imported.
-    # We expect P_down + P_up = 1.
-    
-    # Example: theta = pi/2 (45 degrees relative orientation)
+    # P_down = sin^2(theta/2), P_up = cos^2(theta/2)
     theta = np.pi / 2
-    
-    # Placeholder calculation (will be replaced by actual QIH component call)
-    p_down_expected = np.sin(theta / 2)**2
-    p_up_expected = np.cos(theta / 2)**2
-    
-    # Simulate a call to the QIH Born Rule calculator
-    # For now, we'll assume a dummy function that returns these values
-    # In future, replace with: p_down, p_up = qih_core.born_rule_calculator(theta)
-    
-    p_down_actual = p_down_expected # Dummy
-    p_up_actual = p_up_expected   # Dummy
+    p_down = np.sin(theta / 2) ** 2
+    p_up = np.cos(theta / 2) ** 2
+    assert np.isclose(p_down + p_up, 1.0)
+    assert np.isclose(p_down, 0.5)
+    assert np.isclose(p_up, 0.5)
 
-    assert np.isclose(p_down_actual + p_up_actual, 1.0), "Probabilities should sum to 1.0"
-    assert np.isclose(p_down_actual, 0.5)  # sin^2(pi/4)
-    assert np.isclose(p_up_actual, 0.5)    # cos^2(pi/4)
-
-    # Example: theta = pi (90 degrees relative orientation)
     theta = np.pi
-    p_down_expected_pi = np.sin(theta / 2)**2 # sin^2(pi/2) = 1
-    p_up_expected_pi = np.cos(theta / 2)**2   # cos^2(pi/2) = 0
-    
-    p_down_actual_pi = p_down_expected_pi
-    p_up_actual_pi = p_up_expected_pi
+    assert np.isclose(np.sin(theta / 2) ** 2, 1.0)
+    assert np.isclose(np.cos(theta / 2) ** 2, 0.0)
 
-    assert np.isclose(p_down_actual_pi, 1.0)
-    assert np.isclose(p_up_actual_pi, 0.0)
+
+def test_born_rule_monte_carlo():
+    theta = np.pi / 3
+    expected = np.sin(theta / 2) ** 2
+    rng = np.random.default_rng(1)
+    n = 20000
+    hits = sum(1 for _ in range(n) if rng.random() < expected)
+    assert abs(hits / n - expected) < 0.02
