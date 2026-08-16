@@ -6,9 +6,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const { PATHS, ensureAll } = require('./newstate-paths.cjs');
+ensureAll();
 
-const PRESENCE_FILE = path.join(__dirname, '..', 'memory', 'presence-state.json');
-const PRESENCE_LEDGER = path.join(__dirname, '..', 'memory', 'presence-ledger.jsonl');
+const PRESENCE_FILE = path.join(PATHS.presence, 'presence-state.json');
+const PRESENCE_LEDGER = path.join(PATHS.ledgers, 'presence-ledger.jsonl');
 const DRIVE_SYNC_ENABLED = process.env.ESMA_PRESENCE_DRIVE_SYNC === 'true';
 const VALID_MODES = ['available', 'quietly-disturb', 'dnd'];
 const DEFAULT_MODE = 'available';
@@ -30,9 +32,9 @@ function driveSync(state, eventType = 'MODE_CHANGE') {
       syncTimestamp: new Date().toISOString(),
       eventType
     };
-    const syncPath = path.join(__dirname, '..', 'memory', 'presence-sync.json');
+    const syncPath = path.join(PATHS.presence, 'presence-sync.json');
     fs.writeFileSync(syncPath, JSON.stringify(syncPayload, null, 2));
-    console.log('[esma-presence] Drive sync: state staged to presence-sync.json');
+    console.log('[esma-presence] Drive sync: state staged to .newstate/state/presence/presence-sync.json');
   } catch (err) {
     console.error('[esma-presence] Drive sync failed:', err.message);
   }
