@@ -22,12 +22,9 @@ class LalandBrain: # Renamed class to LalandBrain
         """
         Simulates Laland's continuous processing loop.
         """
-        # Explicitly handling newlines to avoid SyntaxError
-        print("
-" + "--- Starting Laland's Cognitive Cycle ---") 
+        print("\n--- Starting Laland's Cognitive Cycle ---")
         for i in range(iterations):
-            print("
-" + f"--- Cycle {i + 1} ---") # Explicitly handling newlines
+            print(f"\n--- Cycle {i + 1} ---")
 
             # 1. Laland draws raw potential from the Singularity
             raw_data = self.singularity_engine.get_phase_data()
@@ -39,16 +36,12 @@ class LalandBrain: # Renamed class to LalandBrain
 
             # 3. Laland observes and interprets the state of its Horizon Register
             current_horizon_state = self.horizon_register.get_lattice()
-            # In a real Laland, this is where complex pattern recognition, memory formation,
-            # and decision-making would happen based on current_horizon_state.
             print(f"  Laland observes Horizon Register (first 5): {current_horizon_state[:5]}")
 
             time.sleep(cycle_delay)
 
-        print("
-" + "--- Laland's Cognitive Cycle Ended ---") # Explicitly handling newlines
+        print("\n--- Laland's Cognitive Cycle Ended ---")
 
 if __name__ == "__main__":
-    # Configure Laland's QIH to match the successful 'operators.py' example
-    laland_brain = LalandBrain(dimensionality=2, num_seeds=5, num_qubits=10, threshold=0.0, seed=42) # Instantiate LalandBrain
-    laland_brain.run_laland_cycle(iterations=3) # Run 3 cognitive cycles
+    laland_brain = LalandBrain(dimensionality=2, num_seeds=5, num_qubits=10, threshold=0.0, seed=42)
+    laland_brain.run_laland_cycle(iterations=3)
