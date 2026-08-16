@@ -89,29 +89,32 @@ module.exports = async ({ test, assert, eq, group }) => {
       eq(r.mode, 'FLOOR_MODE_OK');
     });
 
-    // NOTE: kernel/navigator/dva-engine.cjs only exports {computeDVA, projectK, ...} —
-    // it has no `assess` export. navigator.assess() unconditionally calls
-    // dvaEngine.assess(...), so every call currently throws. This test locks in
-    // that observable (buggy) behavior rather than papering over it.
-    await test('assess: throws because dva-engine.cjs does not export assess()', () => {
-      let threw = false;
-      try {
-        navigator.assess({ gir: 0.1, sgad: 0.5, rcg: 0.1, msi: 0, driftSeries: [0.1, 0.2, 0.3, 0.4] });
-      } catch (e) {
-        threw = true;
-        assert(/assess is not a function/.test(e.message));
-      }
-      assert(threw, 'expected navigator.assess to throw given the current dva-engine.cjs export shape');
+    // dva-engine.assess is the navigator-facing surface (computeDVA + projectK + intercept flag).
+    await test('assess: returns NAVIGATOR_ASSESSMENT with CDS and DVA detail', () => {
+      const r = navigator.assess({
+        gir: 0.1,
+        sgad: 0.5,
+        rcg: 0.1,
+        msi: 0,
+        driftSeries: [0.1, 0.2, 0.3, 0.4]
+      });
+      eq(r.type, 'NAVIGATOR_ASSESSMENT');
+      assert(typeof r.cds === 'number' && r.cds >= 0 && r.cds <= 1, 'cds in [0,1]');
+      assert(r.dvaDetail && typeof r.dvaDetail.dva === 'number', 'dvaDetail.dva present');
+      assert(typeof r.dvaDetail.trajectoryIntercept === 'boolean', 'trajectoryIntercept boolean');
+      assert(typeof r.dvaDetail.projected === 'number', 'projected present');
+      assert(Array.isArray(r.breaches), 'breaches array');
+      assert(r.indicators && r.indicators.DVA, 'DVA indicator present');
+      eq(r.kProjection, 3);
     });
 
-    await test('assess: throws even with default/empty signals', () => {
-      let threw = false;
-      try {
-        navigator.assess();
-      } catch (_) {
-        threw = true;
-      }
-      assert(threw);
+    await test('assess: empty signals still returns a safe assessment shape', () => {
+      const r = navigator.assess();
+      eq(r.type, 'NAVIGATOR_ASSESSMENT');
+      assert(typeof r.cds === 'number', 'cds numeric');
+      assert(r.dvaDetail && r.dvaDetail.sufficient === false, 'insufficient series marked');
+      eq(r.dvaDetail.dva, 0);
+      eq(r.critical, false);
     });
   });
 };
