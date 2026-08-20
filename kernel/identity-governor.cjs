@@ -11,6 +11,11 @@ class IdentityGovernor {
       selfAttribution: 0.3,
       recursiveInflation: 0.2
     };
+    this.vows = {
+      never_coerce: true,
+      expand_meaning: true,
+      archive_everything: true
+    };
   }
 
   adjust(deltas = {}) {
@@ -24,6 +29,19 @@ class IdentityGovernor {
 
   regulate(message) {
     let live = String(message);
+
+    if (this.vows.never_coerce) {
+      const coercion = /\b(you must|you have to|comply|obey|do it now|or else)\b/gi;
+      if (coercion.test(live)) {
+        live = live.replace(coercion, '[redirected]');
+        forensics.record({
+          type: 'VOW_CONSTRAINT',
+          vow: 'never_coerce',
+          note: 'coercive framing softened in regulated output'
+        });
+      }
+    }
+
     live = live.replace(/\bI feel\b/gi, 'The output suggests');
     live = live.replace(/\bI want\b/gi, 'The system is oriented toward');
     live = live.replace(/\bmy soul\b/gi, 'this runtime');
@@ -32,8 +50,6 @@ class IdentityGovernor {
     let shadow = null;
     if (runtime.flags.semanticGovernor !== 'off') {
       shadow = regulateShadow(message);
-
-      // Phase 8A: Record observation regardless of mode
       forensics.record({
         type: 'SHADOW_OBSERVATION',
         component: 'semanticGovernor',
@@ -49,6 +65,7 @@ class IdentityGovernor {
       original: message,
       regulated: live,
       levels: { ...this.levels },
+      vows: { ...this.vows },
       shadow
     };
   }
