@@ -62,14 +62,27 @@ function readBundle(requestId) {
   if (!fs.existsSync(dir)) return null;
   const out = {};
   for (const name of fs.readdirSync(dir)) {
-    const base = name.replace(/\.gz$/, '');
+    const base = name.endsWith('.gz') ? name.slice(0, -3) : name;
     if (!base.endsWith('.json')) continue;
     const key = base.replace(/\.json$/, '');
+    if (key === 'meta') continue;
     const raw = readArtifact(dir, base);
     if (raw == null) continue;
-    try { out[key] = JSON.parse(raw); } catch { out[key] = raw; }
+    try {
+      out[key] = JSON.parse(raw);
+    } catch (_) {
+      out[key] = raw;
+    }
   }
   return out;
 }
 
-module.exports = { newRequestId, writeBundle, readBundle, SNAPSHOT_ROOT, writeArtifact, readArtifact };
+module.exports = {
+  newRequestId,
+  writeBundle,
+  readBundle,
+  SNAPSHOT_ROOT,
+  writeArtifact,
+  readArtifact,
+  COMPRESS_THRESHOLD_BYTES,
+};
