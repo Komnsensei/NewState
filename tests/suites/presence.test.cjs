@@ -16,13 +16,14 @@ function restore(file, content) {
   if (content === null) {
     if (fs.existsSync(file)) fs.unlinkSync(file);
   } else {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, content);
   }
 }
 function resetFiles() {
-  if (fs.existsSync(PRESENCE_FILE)) fs.unlinkSync(PRESENCE_FILE);
-  if (fs.existsSync(PRESENCE_LEDGER)) fs.unlinkSync(PRESENCE_LEDGER);
-  if (fs.existsSync(PRESENCE_SYNC)) fs.unlinkSync(PRESENCE_SYNC);
+  for (const f of [PRESENCE_FILE, PRESENCE_LEDGER, PRESENCE_SYNC]) {
+    if (fs.existsSync(f)) fs.unlinkSync(f);
+  }
 }
 
 module.exports = async ({ test, assert, eq, group }) => {
@@ -36,7 +37,7 @@ module.exports = async ({ test, assert, eq, group }) => {
     delete require.cache[require.resolve('../../kernel/presence.cjs')];
     const presence = require('../../kernel/presence.cjs');
 
-    await group('presence (drive sync disabled — default)', async () => {
+    await group('presence (drive sync disabled \u2014 default)', async () => {
       await test('getMode: initializes the default "available" state on first read', () => {
         const state = presence.getMode();
         eq(state.mode, 'available');
@@ -47,17 +48,13 @@ module.exports = async ({ test, assert, eq, group }) => {
       });
 
       await test('DRIVE_SYNC_ENABLED is false and no presence-sync.json is written', () => {
-        assert(presence.DRIVE_SYNC_ENABLED === false);
+        eq(presence.DRIVE_SYNC_ENABLED, false);
         assert(!fs.existsSync(PRESENCE_SYNC));
       });
 
       await test('setMode: rejects an unauthorized author', () => {
         let threw = false;
-        try {
-          presence.setMode('dnd', { authoredBy: 'stranger' });
-        } catch (e) {
-          threw = true;
-        }
+        try { presence.setMode('dnd', { authoredBy: 'stranger' }); } catch (e) { threw = true; }
         assert(threw);
       });
 
@@ -69,31 +66,19 @@ module.exports = async ({ test, assert, eq, group }) => {
 
       await test('setMode: rejects an invalid mode name even from esma', () => {
         let threw = false;
-        try {
-          presence.setMode('invisible', { authoredBy: 'esma' });
-        } catch (e) {
-          threw = true;
-        }
+        try { presence.setMode('invisible', { authoredBy: 'esma' }); } catch (e) { threw = true; }
         assert(threw);
       });
 
       await test('setMode: hexagnt is never authorized, override or not', () => {
         let threw = false;
-        try {
-          presence.setMode('available', { authoredBy: 'hexagnt', override: true });
-        } catch (e) {
-          threw = true;
-        }
+        try { presence.setMode('available', { authoredBy: 'hexagnt', override: true }); } catch (e) { threw = true; }
         assert(threw);
       });
 
       await test('setMode: shawn must explicitly pass override:true', () => {
         let threw = false;
-        try {
-          presence.setMode('available', { authoredBy: 'shawn' });
-        } catch (e) {
-          threw = true;
-        }
+        try { presence.setMode('available', { authoredBy: 'shawn' }); } catch (e) { threw = true; }
         assert(threw);
       });
 
@@ -112,25 +97,29 @@ module.exports = async ({ test, assert, eq, group }) => {
       await test('telegramResponse: "available" allows a normal response', () => {
         presence.setMode('available', { authoredBy: 'esma' });
         const r = presence.telegramResponse('hello');
-        assert(r.allow === true);
+        eq(r.action, 'normal');
+        eq(r.allowResponse, true);
       });
 
       await test('telegramResponse: "quietly-disturb" issues a soft-knock', () => {
         presence.setMode('quietly-disturb', { authoredBy: 'esma' });
         const r = presence.telegramResponse('hello');
-        assert(r.softKnock === true);
+        eq(r.action, 'soft-knock');
+        eq(r.allowResponse, false);
       });
 
       await test('telegramResponse: "dnd" queues messages and surfaces the timer flag', () => {
         presence.setMode('dnd', { authoredBy: 'esma' });
         const r = presence.telegramResponse('hello');
-        assert(r.queued === true);
+        eq(r.action, 'queue');
+        eq(r.allowResponse, false);
       });
 
       await test('windowState: mirrors the current mode into a UI display state', () => {
         presence.setMode('available', { authoredBy: 'esma' });
         const w = presence.windowState();
-        eq(w.mode, 'available');
+        eq(w.display, 'unlocked');
+        eq(w.showShared, true);
       });
 
       await test('loadState: recovers to a default state when the state file is corrupted', () => {
