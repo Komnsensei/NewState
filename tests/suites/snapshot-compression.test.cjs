@@ -12,8 +12,8 @@ module.exports = async ({ test, assert, eq, group }) => {
       const rid = newRequestId();
       writeBundle(rid, { prompt: 'small' });
       const dir = path.join(SNAPSHOT_ROOT, rid);
-      assert(fs.existsSync(path.join(dir, 'prompt.txt')));
-      assert(!fs.existsSync(path.join(dir, 'prompt.txt.gz')));
+      assert(fs.existsSync(path.join(dir, 'prompt.json')));
+      assert(!fs.existsSync(path.join(dir, 'prompt.json.gz')));
     });
 
     await test('large artifact stored gzipped', () => {
@@ -21,7 +21,7 @@ module.exports = async ({ test, assert, eq, group }) => {
       const big = 'x'.repeat(COMPRESS_THRESHOLD_BYTES + 100);
       writeBundle(rid, { prompt: big });
       const dir = path.join(SNAPSHOT_ROOT, rid);
-      assert(fs.existsSync(path.join(dir, 'prompt.txt.gz')));
+      assert(fs.existsSync(path.join(dir, 'prompt.json.gz')));
     });
 
     await test('readBundle reverses compression transparently', () => {
