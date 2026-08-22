@@ -1,0 +1,6 @@
+{
+  "name": "newstate-vibesafe",
+  "version": "0.4.3",
+  "main": "index.cjs",
+  "type": "commonjs"
+}
