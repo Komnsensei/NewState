@@ -1,67 +1,3 @@
-
-const { qihMonitor } = require('./qih-monitor.cjs');
-
-const MONITOR_INTERVAL_MS = 60 * 1000; // Check every 60 seconds
-
-class BROAgent {
-  constructor() {
-    this.monitoringInterval = null;
-    this.lastStatus = 'INITIALIZING';
-  }
-
-  _monitorLoop() {
-    const report = qihMonitor.analyze();
-    const currentStatus = report.overall;
-
-    if (currentStatus !== this.lastStatus) {
-      console.log(`
-[BRO-QIH] Status change detected: ${this.lastStatus} -> ${currentStatus}`);
-      this.lastStatus = currentStatus;
-    }
-
-    if (currentStatus === 'CAUTION' || currentStatus === 'CRITICAL') {
-      console.warn(`
-=== BRO-QIH WARNING: ${currentStatus} ===`);
-      console.warn('QIH Status Report:');
-      console.warn(JSON.stringify(report, null, 2));
-      if (report.warnings && report.warnings.length > 0) {
-        console.warn('Detailed Warnings:');
-        report.warnings.forEach((w, i) => console.warn(`  ${i + 1}. ${w}`));
-      }
-      console.warn('===============================
-');
-
-      // Future: Integrate proactive intervention APIs here
-      // e.g., if (currentStatus === 'CRITICAL') { triggerSystemCheck(); broadcastUrgentAlert('BRO-QIH CRITICAL: Check System Logs!'); }
-    } else if (currentStatus === 'STABLE') {
-      console.log(`[BRO-QIH] System is STABLE. Current report summary: Pruner S: ${report.pruner.avgS}, Integrity Strain: ${report.integrityCritic.avgStrain}`);
-    } else {
-      console.log(`[BRO-QIH] ${currentStatus} status. Details: ${JSON.stringify(report.warnings)}`);
-    }
-  }
-
-  start() {
-    if (this.monitoringInterval) {
-      console.warn('[BRO-QIH] Agent already running. Restarting.');
-      this.stop();
-    }
-    console.log(`[BRO-QIH] Starting proactive monitoring every ${MONITOR_INTERVAL_MS / 1000} seconds.`);
-    this.monitoringInterval = setInterval(() => this._monitorLoop(), MONITOR_INTERVAL_MS);
-    // Run once immediately on start
-    this._monitorLoop();
-  }
-
-  stop() {
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
-      console.log('[BRO-QIH] Proactive monitoring stopped.');
-    }
-  }
-}
-
-module.exports = { BROAgent, broAgent: new BROAgent() };
----
 'use strict';
 
 const { qihMonitor } = require('./qih-monitor.cjs');
@@ -135,8 +71,7 @@ class BROAgent {
         console.warn('Detailed Warnings:');
         report.warnings.forEach((w, i) => console.warn(`  ${i + 1}. ${w}`));
       }
-      console.warn('===============================
-');
+      console.warn('===============================\n');
     } else if (currentStatus === 'STABLE') {
       console.log(`[BRO-QIH] System is STABLE. Current report summary: Pruner S: ${report.pruner.avgS}, Integrity Strain: ${report.integrityCritic.avgStrain}`);
     } else {
@@ -144,69 +79,6 @@ class BROAgent {
     }
 
     this._applyInterventions(report); // QIH INTEGRATION: Apply interventions after analysis
-  }
-
-  start() {
-    if (this.monitoringInterval) {
-      console.warn('[BRO-QIH] Agent already running. Restarting.');
-      this.stop();
-    }
-    console.log(`[BRO-QIH] Starting proactive monitoring every ${MONITOR_INTERVAL_MS / 1000} seconds.`);
-    this.monitoringInterval = setInterval(() => this._monitorLoop(), MONITOR_INTERVAL_MS);
-    // Run once immediately on start
-    this._monitorLoop();
-  }
-
-  stop() {
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
-      console.log('[BRO-QIH] Proactive monitoring stopped.');
-    }
-  }
-}
-
-module.exports = { BROAgent, broAgent: new BROAgent() };
-
-const { qihMonitor } = require('./qih-monitor.cjs');
-
-const MONITOR_INTERVAL_MS = 60 * 1000; // Check every 60 seconds
-
-class BROAgent {
-  constructor() {
-    this.monitoringInterval = null;
-    this.lastStatus = 'INITIALIZING';
-  }
-
-  _monitorLoop() {
-    const report = qihMonitor.analyze();
-    const currentStatus = report.overall;
-
-    if (currentStatus !== this.lastStatus) {
-      console.log(`
-[BRO-QIH] Status change detected: ${this.lastStatus} -> ${currentStatus}`);
-      this.lastStatus = currentStatus;
-    }
-
-    if (currentStatus === 'CAUTION' || currentStatus === 'CRITICAL') {
-      console.warn(`
-=== BRO-QIH WARNING: ${currentStatus} ===`);
-      console.warn('QIH Status Report:');
-      console.warn(JSON.stringify(report, null, 2));
-      if (report.warnings && report.warnings.length > 0) {
-        console.warn('Detailed Warnings:');
-        report.warnings.forEach((w, i) => console.warn(`  ${i + 1}. ${w}`));
-      }
-      console.warn('===============================
-');
-
-      // Future: Integrate proactive intervention APIs here
-      // e.g., if (currentStatus === 'CRITICAL') { triggerSystemCheck(); broadcastUrgentAlert('BRO-QIH CRITICAL: Check System Logs!'); }
-    } else if (currentStatus === 'STABLE') {
-      console.log(`[BRO-QIH] System is STABLE. Current report summary: Pruner S: ${report.pruner.avgS}, Integrity Strain: ${report.integrityCritic.avgStrain}`);
-    } else {
-      console.log(`[BRO-QIH] ${currentStatus} status. Details: ${JSON.stringify(report.warnings)}`);
-    }
   }
 
   start() {

@@ -12,3 +12,7 @@ coverage/
 .newstate/**
 !.newstate/README.md
 !.newstate/**/.gitkeep
+
+# Python
+__pycache__/
+*.pyc

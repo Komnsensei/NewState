@@ -19,8 +19,7 @@ class QIHMonitor {
     }
     try {
       const lines = fs.readFileSync(QIH_TELEMETRY_PATH, 'utf8')
-        .split('
-')
+        .split('\n')
         .filter(Boolean)
         .slice(-MAX_TELEMETRY_LINES); // Keep only the most recent entries
       this.telemetryHistory = lines.map(line => {
@@ -141,8 +140,7 @@ class QIHMonitor {
   // Public method to get a QIH status report
   getQIHStatus() {
     const report = this.analyze();
-    console.log('
---- BRO QIH Status Report ---');
+    console.log('\n--- BRO QIH Status Report ---');
     console.log(`Overall Status: ${report.overall}`);
     console.log('Pruner Metrics (last 1000 events):', JSON.stringify(report.pruner, null, 2));
     console.log('Integrity Critic Metrics (last 1000 events):', JSON.stringify(report.integrityCritic, null, 2));
@@ -150,8 +148,7 @@ class QIHMonitor {
       console.warn('QIH Warnings:');
       report.warnings.forEach((w, i) => console.warn(`  ${i + 1}. ${w}`));
     }
-    console.log('-----------------------------
-');
+    console.log('-----------------------------\n');
     return report;
   }
 }
