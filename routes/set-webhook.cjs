@@ -3,10 +3,11 @@ require('dotenv').config();
 const { telegramBot } = require('../integrations/telegram.cjs');
 
 const base = (process.env.WEBHOOK_BASE_URL || '').trim();
-if (!base || /your-railway-domain|ngrok/i.test(base)) {
+if (!base || /your-railway-domain|your-service-xxxx|your-app\.up\.railway|ngrok/i.test(base)) {
   console.error(
-    'set-webhook: WEBHOOK_BASE_URL must be a real public URL ' +
-    '(e.g. https://your-app.up.railway.app). The ngrok dev tunnel from an old commit is gone — do not use it.'
+    'set-webhook: WEBHOOK_BASE_URL must be the deployed Google Cloud Run URL ' +
+    '(project: passioncraft, e.g. https://your-service-xxxx-uc.a.run.app). ' +
+    'Local tunnels like ngrok are for dev only — never point the production webhook at one.'
   );
   process.exit(1);
 }
