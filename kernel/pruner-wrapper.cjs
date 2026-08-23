@@ -4,14 +4,32 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// Repo root closed_loop_graph_pruner.py (kernel/ is one level down)
-const PRUNER_SCRIPT = process.env.PRUNER_SCRIPT_PATH
-  || path.join(__dirname, '..', 'closed_loop_graph_pruner.py');
 const PRUNER_PATH = process.env.PRUNER_PYTHON_PATH || 'python';
 const VERBOSE = process.env.NEWSTATE_VERBOSE_PRUNER === '1';
 const DISABLED = process.env.NEWSTATE_DISABLE_PRUNER === '1';
 
 let _loggedMissing = false;
+
+function candidateScripts() {
+  const list = [];
+  if (process.env.PRUNER_SCRIPT_PATH) list.push(process.env.PRUNER_SCRIPT_PATH);
+  // kernel/ -> repo root (correct)
+  list.push(path.join(__dirname, '..', 'closed_loop_graph_pruner.py'));
+  // cwd (when tests run from repo root)
+  list.push(path.join(process.cwd(), 'closed_loop_graph_pruner.py'));
+  // legacy mistaken parent (bro/) — only if file actually exists there
+  list.push(path.join(__dirname, '..', '..', 'closed_loop_graph_pruner.py'));
+  return list;
+}
+
+function resolveScript() {
+  for (const p of candidateScripts()) {
+    try {
+      if (p && fs.existsSync(p)) return path.resolve(p);
+    } catch (_) {}
+  }
+  return null;
+}
 
 function passthrough(inputData, reason) {
   return {
@@ -30,23 +48,21 @@ function logOnce(msg) {
   if (_loggedMissing) return;
   _loggedMissing = true;
   if (VERBOSE) {
-    console.error(`[Pruner Wrapper] ${msg} (further messages suppressed; set NEWSTATE_VERBOSE_PRUNER=1 to always log)`);
+    console.error(`[Pruner Wrapper] ${msg}`);
   }
 }
 
 /**
- * Executes the ClosedLoopGraphPruner Python script.
- * Soft-fails to passthrough weights when Python is missing or script fails.
- * @param {object} inputData - { weights, state_rho, adj_matrix, layer_id }
- * @returns {Promise<object>} - { pruned_weights, telemetry }
+ * ClosedLoopGraphPruner bridge. Soft-fails to passthrough when Python/script unavailable.
  */
 async function runPruner(inputData) {
   if (DISABLED) {
     return passthrough(inputData, 'disabled_by_env');
   }
 
-  if (!fs.existsSync(PRUNER_SCRIPT)) {
-    logOnce(`script not found at ${PRUNER_SCRIPT}`);
+  const script = resolveScript();
+  if (!script) {
+    logOnce('closed_loop_graph_pruner.py not found (set PRUNER_SCRIPT_PATH). Using passthrough.');
     return passthrough(inputData, 'script_missing');
   }
 
@@ -63,43 +79,31 @@ async function runPruner(inputData) {
 
     let prunerProcess;
     try {
-      prunerProcess = spawn(PRUNER_PATH, [PRUNER_SCRIPT], {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
+      // On Windows, "py" launcher needs -3 sometimes; user may set full python.exe path
+      const args = [script];
+      prunerProcess = spawn(PRUNER_PATH, args, { stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) {
       logOnce(`spawn threw: ${err.message}`);
       return finish(passthrough(inputData, 'spawn_threw'));
     }
 
-    prunerProcess.stdout.on('data', (data) => {
-      stdoutData += data.toString();
-    });
-
-    prunerProcess.stderr.on('data', (data) => {
-      stderrData += data.toString();
-    });
+    prunerProcess.stdout.on('data', (d) => { stdoutData += d.toString(); });
+    prunerProcess.stderr.on('data', (d) => { stderrData += d.toString(); });
 
     prunerProcess.on('close', (code) => {
       if (code !== 0) {
-        // ENOENT / missing python often surfaces as non-zero with empty stderr on some platforms
-        const reason = /not found|ENOENT|Microsoft Store/i.test(stderrData)
-          ? 'python_missing'
-          : `exit_${code}`;
-        logOnce(`Python pruner unavailable (${reason}). Using passthrough weights.`);
-        return finish(passthrough(inputData, reason));
+        logOnce(`pruner exit ${code}: ${(stderrData || '').slice(0, 200)}`);
+        return finish(passthrough(inputData, `exit_${code}`));
       }
-
       try {
-        const result = JSON.parse(stdoutData);
-        finish(result);
-      } catch (jsonErr) {
-        logOnce(`JSON parse failed: ${jsonErr.message}`);
+        finish(JSON.parse(stdoutData));
+      } catch (e) {
+        logOnce(`bad JSON: ${e.message}`);
         finish(passthrough(inputData, 'bad_json'));
       }
     });
 
     prunerProcess.on('error', (err) => {
-      // spawn python ENOENT — expected on machines without Python
       logOnce(`spawn error: ${err.message}`);
       finish(passthrough(inputData, err.code === 'ENOENT' ? 'python_missing' : 'spawn_error'));
     });
@@ -108,10 +112,10 @@ async function runPruner(inputData) {
       prunerProcess.stdin.write(JSON.stringify(inputData || {}));
       prunerProcess.stdin.end();
     } catch (writeErr) {
-      logOnce(`stdin write failed: ${writeErr.message}`);
+      logOnce(`stdin: ${writeErr.message}`);
       finish(passthrough(inputData, 'stdin_error'));
     }
   });
 }
 
-module.exports = { runPruner, passthrough };
+module.exports = { runPruner, passthrough, resolveScript };
