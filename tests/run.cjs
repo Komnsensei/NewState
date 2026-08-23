@@ -86,6 +86,7 @@ const SUITES = [
   './suites/mcp-notebook-bridge.test.cjs',
   './suites/mcp-notebook-client.test.cjs',
   './suites/mcp-config-and-docs.test.cjs',
+  './suites/dashboard.test.cjs',
   './suites/scc.test.cjs'
 ];
 

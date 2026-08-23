@@ -100,6 +100,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && req.url === '/dashboard') {
+    const dashPath = path.join(__dirname, 'dashboard', 'index.html');
+    if (fs.existsSync(dashPath)) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.writeHead(200);
+      res.end(fs.readFileSync(dashPath));
+    } else {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'dashboard not found' }));
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && req.url === '/api/status') {
+    const { buildStatus } = require('./kernel/dashboard-status.cjs');
+    res.writeHead(200);
+    res.end(JSON.stringify(buildStatus()));
+    return;
+  }
+
   if (req.method === 'POST' && req.url === '/chat') {
     const body = await parseBody(req);
     const text = body.text || body.message || '';

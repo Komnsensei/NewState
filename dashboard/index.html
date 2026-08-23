@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NewState · Esma Kernel Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0e14; --panel: #111722; --panel2: #0d131c; --line: #1e2a3a;
+    --text: #c9d6e3; --dim: #6b7d94; --accent: #4de1c1; --accent2: #7aa2ff;
+    --warn: #f5a623; --bad: #ff5d5d; --ok: #4de1c1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; padding: 24px; }
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 20px; letter-spacing: 1px; color: var(--accent); }
+  .phase { color: var(--dim); font-size: 12px; }
+  #conn { font-size: 12px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--line); }
+  #conn.ok { color: var(--ok); border-color: var(--ok); }
+  #conn.bad { color: var(--bad); border-color: var(--bad); }
+  #lastUpdated { color: var(--dim); font-size: 12px; margin-left: auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--dim); margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .row { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; }
+  .row .k { color: var(--dim); }
+  .row .v { text-align: right; word-break: break-word; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge.ok { background: rgba(77,225,193,.12); color: var(--ok); }
+  .badge.warn { background: rgba(245,166,35,.12); color: var(--warn); }
+  .badge.bad { background: rgba(255,93,93,.12); color: var(--bad); }
+  .badge.dim { background: rgba(107,125,148,.12); color: var(--dim); }
+  .flag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; border: 1px solid var(--line); color: var(--text); margin: 2px; }
+  .flag.on { border-color: var(--ok); color: var(--ok); }
+  .flag.off { color: var(--dim); }
+  ul.log { list-style: none; max-height: 180px; overflow-y: auto; }
+  ul.log li { padding: 3px 0; border-bottom: 1px dashed var(--line); font-size: 12px; }
+  ul.log .t { color: var(--dim); }
+  .mono { color: var(--accent2); }
+  .actions { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
+  button { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 16px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  input[type=text] { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font: inherit; flex: 1; }
+  #pingResult { font-size: 12px; color: var(--dim); min-height: 16px; }
+  .empty { color: var(--dim); font-style: italic; }
+  a { color: var(--accent2); }
+</style>
+</head>
+<body>
+<header>
+  <h1>◈ NEWSTATE</h1>
+  <span class="phase" id="phase">esma-kernel</span>
+  <span id="conn" class="bad">offline</span>
+  <span id="lastUpdated"></span>
+</header>
+
+<div class="grid">
+  <section class="card">
+    <h2>System Health</h2>
+    <div id="health"></div>
+  </section>
+
+  <section class="card">
+    <h2>Esma Presence</h2>
+    <div id="presence"></div>
+  </section>
+
+  <section class="card">
+    <h2>QIH Substrate</h2>
+    <div id="qih"></div>
+  </section>
+
+  <section class="card">
+    <h2>Kernel Runtime</h2>
+    <div id="runtime"></div>
+  </section>
+
+  <section class="card">
+    <h2>Memory &amp; Ledgers</h2>
+    <div id="memory"></div>
+  </section>
+
+  <section class="card">
+    <h2>Environment</h2>
+    <div id="env"></div>
+  </section>
+
+  <section class="card">
+    <h2>Recent Activity</h2>
+    <ul class="log" id="activity"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Channel</h2>
+    <div class="actions">
+      <input type="text" id="pingText" placeholder="say something to esma…" value="hello esma">
+      <button id="pingBtn">Ping Esma</button>
+    </div>
+    <div id="pingResult"></div>
+    <div style="margin-top:12px">
+      <div class="row"><span class="k">REST endpoint</span><span class="v mono">POST /chat</span></div>
+      <div class="row"><span class="k">Telegram webhook</span><span class="v mono">/telegram/webhook</span></div>
+      <div class="row"><span class="k">MCP bridge</span><span class="v mono">:3100</span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function badge(status) {
+  const s = String(status || '').toUpperCase();
+  if (s === 'STABLE' || s === 'AVAILABLE' || s === 'NORMAL') return '<span class="badge ok">' + esc(status) + '</span>';
+  if (s === 'CAUTION' || s === 'SOFT-KNOCK' || s === 'INITIALIZING') return '<span class="badge warn">' + esc(status) + '</span>';
+  if (s === 'CRITICAL' || s === 'DND' || s === 'QUEUE') return '<span class="badge bad">' + esc(status) + '</span>';
+  return '<span class="badge dim">' + esc(status || '—') + '</span>';
+}
+const row = (k, v) => '<div class="row"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>';
+const flag = (name, on) => '<span class="flag ' + (on ? 'on' : 'off') + '">' + name + '</span>';
+
+function render(data) {
+  $('phase').textContent = (data.service && data.service.name || 'esma-kernel') + ' · ' + (data.service && data.service.phase || '');
+  $('lastUpdated').textContent = 'updated ' + new Date(data.generatedAt).toLocaleTimeString();
+
+  // health
+  const s = data.storage || {};
+  $('health').innerHTML =
+    row('history entries', esc(data.service.historyEntries)) +
+    row('snapshots', esc(s.snapshots)) +
+    row('forensics', esc(s.forensics)) +
+    row('ledgers', esc(s.ledgers)) +
+    row('agents', esc(s.agents)) +
+    row('evolution events', esc(s.evolution)) +
+    row('git', '<span class="mono">' + esc((data.git && data.git.branch) || '?') + '@' + esc((data.git && data.git.shortSha) || '?') + '</span>');
+
+  // presence
+  const p = data.presence || {};
+  $('presence').innerHTML =
+    row('mode', badge(p.mode)) +
+    row('authored by', esc(p.authoredBy || '—')) +
+    row('window', esc((p.window && p.window.display) || '—')) +
+    row('timer', esc(p.timer || '—')) +
+    row('note', esc(p.note || '—')) +
+    row('drive sync', p.driveSync ? '<span class="badge ok">ENABLED</span>' : '<span class="badge dim">off</span>');
+
+  // qih
+  const q = data.qih || {};
+  if (q.status === 'NO_TELEMETRY' || q.error) {
+    $('qih').innerHTML = '<div class="empty">' + esc(q.message || q.error || 'no telemetry') + '</div>';
+  } else {
+    const pr = q.pruner || {}, ic = q.integrityCritic || {};
+    $('qih').innerHTML =
+      row('overall', badge(q.overall)) +
+      row('pruner events', esc(pr.events)) +
+      row('avg entropy S', esc(pr.avgS)) +
+      row('avg w_min', esc(pr.avgWMin)) +
+      row('high-S events', esc(pr.highSEvents)) +
+      row('integrity strain', esc(ic.avgStrain)) +
+      row('high-strain', esc(ic.highStrainEvents)) +
+      (q.warnings && q.warnings.length ? q.warnings.slice(0, 2).map((w) => '<div class="empty">⚠ ' + esc(w) + '</div>').join('') : '');
+  }
+
+  // runtime
+  const r = data.runtime || {};
+  const m = r.metrics || {};
+  const fl = r.flags || {};
+  $('runtime').innerHTML =
+    row('uptime', esc(Math.floor((r.uptimeMs || 0) / 1000) + 's')) +
+    row('requests', esc(m.requests)) +
+    row('errors', esc(m.errors)) +
+    row('interceptions', esc(m.interceptions)) +
+    row('recursion depth', esc(r.recursionDepth)) +
+    row('flags', flag('semanticGovernor:' + fl.semanticGovernor, fl.semanticGovernor === 'live') + ' ' + flag('memory:' + fl.memoryEnabled, !!fl.memoryEnabled));
+
+  // memory
+  $('memory').innerHTML =
+    row('hex facts', esc(data.memory && data.memory.facts != null ? data.memory.facts : '—')) +
+    row('recent activity', esc((data.recentActivity || []).length) + ' events');
+
+  // env
+  const e = data.env || {};
+  $('env').innerHTML =
+    row('gemini key', e.geminiKey ? '<span class="badge ok">SET</span>' : '<span class="badge bad">MISSING</span>') +
+    row('gemini model', esc(e.geminiModel)) +
+    row('telegram token', e.telegramToken ? '<span class="badge ok">SET</span>' : '<span class="badge bad">MISSING</span>') +
+    row('reply path', e.replyPath ? '<span class="badge ok">on</span>' : '<span class="badge dim">off</span>') +
+    row('brain provider', esc(e.brainProvider)) +
+    row('runtime home', '<span class="mono">' + esc(e.newstateHome || '') + '</span>');
+
+  // activity
+  const acts = data.recentActivity || [];
+  $('activity').innerHTML = acts.length
+    ? acts.map((a) => '<li><span class="t">' + esc((a.timestamp || '').slice(11, 19)) + '</span> [' + esc(a.role || a.event || '?') + '] ' + esc((a.text || a.message || JSON.stringify(a)).slice(0, 90)) + '</li>').join('')
+    : '<li class="empty">no activity yet</li>';
+}
+
+async function refresh() {
+  try {
+    const res = await fetch('/api/status', { cache: 'no-store' });
+    if (!res.ok) throw new Error('status ' + res.status);
+    const data = await res.json();
+    $('conn').className = 'badge ok'; $('conn').textContent = 'online';
+    render(data);
+  } catch (e) {
+    $('conn').className = 'badge bad'; $('conn').textContent = 'offline';
+    $('lastUpdated').textContent = '';
+  }
+}
+
+$('pingBtn').addEventListener('click', async () => {
+  const text = $('pingText').value.trim() || 'hello esma';
+  $('pingResult').textContent = 'sending…';
+  try {
+    const res = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+    const j = await res.json();
+    $('pingResult').textContent = 'category=' + (j.category || '?') + ' conf=' + (j.confidence || 0) + ' action=' + (j.governed_action || '?') + ' (kernel reply needs a live model)';
+  } catch (e) {
+    $('pingResult').textContent = 'ping failed: ' + e.message;
+  }
+});
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
