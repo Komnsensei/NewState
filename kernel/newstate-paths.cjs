@@ -1,7 +1,6 @@
 'use strict';
 /**
- * Central runtime home for NewState status, logs, ledgers, snapshots.
- * Override with NEWSTATE_HOME (absolute or relative to process.cwd()).
+ * Central runtime home for NewState status, logs, ledgers, snapshots, agents.
  */
 const fs = require('fs');
 const path = require('path');
@@ -24,51 +23,15 @@ const PATHS = {
   evolution: path.join(HOME, 'evolution'),
   status: path.join(HOME, 'status'),
   forensicSink: path.join(HOME, 'logs', 'forensic-sink'),
+  agents: path.join(HOME, 'agents'),
 };
 
 function ensure(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  return dir;
 }
 
 function ensureAll() {
-  [
-    PATHS.logs,
-    PATHS.forensics,
-    PATHS.forensicsArchive,
-    PATHS.history,
-    PATHS.state,
-    PATHS.presence,
-    PATHS.ledgers,
-    PATHS.snapshots,
-    PATHS.evolution,
-    PATHS.status,
-    PATHS.forensicSink,
-  ].forEach(ensure);
-  return PATHS;
+  Object.values(PATHS).forEach((p) => ensure(p));
 }
 
-function statusFile(name = 'runtime.json') {
-  ensure(PATHS.status);
-  return path.join(PATHS.status, name);
-}
-
-function writeStatus(name, payload) {
-  const file = statusFile(name);
-  const body = {
-    updatedAt: new Date().toISOString(),
-    ...(typeof payload === 'object' && payload ? payload : { value: payload }),
-  };
-  fs.writeFileSync(file, JSON.stringify(body, null, 2));
-  return file;
-}
-
-module.exports = {
-  REPO_ROOT,
-  HOME,
-  PATHS,
-  ensure,
-  ensureAll,
-  statusFile,
-  writeStatus,
-};
+module.exports = { PATHS, HOME, REPO_ROOT, ensure, ensureAll };
