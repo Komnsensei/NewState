@@ -15,17 +15,17 @@ module.exports = async ({ test, assert, eq, group }) => {
       eq(r.method, 'phase-6g1-post-promotion-delta');
     });
 
-  await test('grounding section reflects attractor when events present', () => {
-      // Isolate this test from any forensic events leaked from prior tests.
+    await test('grounding section reflects attractor when events present', () => {
       if (typeof forensics.clear === 'function') {
         forensics.clear();
       } else {
-        // Fallback: write empty to the active log file
         const fs = require('fs');
         const path = require('path');
-        const log = path.join(process.env.OPENKRAFT_FORENSICS_DIR, 'active.log');
+        const { PATHS, ensureAll } = require('../../kernel/newstate-paths.cjs');
+        ensureAll();
+        const dir = process.env.OPENKRAFT_FORENSICS_DIR || PATHS.forensics;
+        const log = path.join(dir, 'active.log');
         try { fs.writeFileSync(log, ''); } catch (_) {}
-        // Force re-read of empty file
         delete require.cache[require.resolve('../../kernel/forensics.cjs')];
         const reloaded = require('../../kernel/forensics.cjs');
         Object.assign(forensics, reloaded.forensics);
@@ -66,9 +66,8 @@ module.exports = async ({ test, assert, eq, group }) => {
       assert(r.grounding.repeatPhraseAttractor.liveUniquePhrases >= 2);
       eq(r.grounding.repeatPhraseAttractor.baselineUniquePhrases, 1);
       assert(r.grounding.promotionState.promotedEvents >= 2);
-    });    
+    });
 
-   
     await test('interpretation strings present', () => {
       const r = deltaReport.generate();
       assert(typeof r.grounding.interpretation === 'string');

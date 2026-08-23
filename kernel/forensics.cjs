@@ -88,6 +88,13 @@ class Forensics {
   }
 
   flush() {}
+
+  /** Test/helper: wipe active log without archiving. */
+  clear() {
+    ensureDirs();
+    fs.writeFileSync(ACTIVE_LOG, '');
+    this.eventCount = 0;
+  }
 }
 
 module.exports = { Forensics, forensics: new Forensics(), EVENT_CLASSES };
