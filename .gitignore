@@ -19,3 +19,6 @@ __pycache__/
 
 # Runtime telemetry
 memory/qih-telemetry.jsonl
+
+# Runtime replay artifacts
+replays/
