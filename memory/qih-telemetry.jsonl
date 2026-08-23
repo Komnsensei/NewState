@@ -1,8 +1,0 @@
-{"timestamp":"2026-08-23T16:06:11.243Z","event":"pruner_run","requestId":"1787501170930-bec8e830","sessionId":null,"mode":"passthrough","reason":"exit_1","python":false}
-{"timestamp":"2026-08-23T16:06:11.730Z","event":"pruner_run","requestId":"1787501171450-975184f1","sessionId":null,"mode":"passthrough","reason":"exit_1","python":false}
-{"timestamp":"2026-08-23T16:06:12.102Z","event":"pruner_run","requestId":"1787501171870-eb2a24d5","sessionId":null,"mode":"passthrough","reason":"exit_1","python":false}
-{"timestamp":"2026-08-23T16:06:12.570Z","event":"pruner_run","requestId":"1787501172288-5bac7231","sessionId":null,"mode":"passthrough","reason":"exit_1","python":false}
-{"timestamp":"2026-08-23T16:06:13.303Z","event":"pruner_run","requestId":"1787501172979-6aa4ec23","sessionId":null,"mode":"passthrough","reason":"exit_1","python":false}
-{"timestamp":"2026-08-23T16:06:13.848Z","event":"pruner_run","requestId":"1787501173500-aefb54cf","sessionId":null,"mode":"passthrough","reason":"exit_1","python":false}
-{"timestamp":"2026-08-23T16:06:14.303Z","event":"pruner_run","requestId":"1787501173994-a7a84e0b","sessionId":null,"mode":"passthrough","reason":"exit_1","python":false}
-{"timestamp":"2026-08-23T16:06:14.986Z","event":"pruner_run","requestId":"1787501174681-32189e7d","sessionId":"p8-integration-test","mode":"passthrough","reason":"exit_1","python":false}

@@ -16,3 +16,6 @@ coverage/
 # Python
 __pycache__/
 *.pyc
+
+# Runtime telemetry
+memory/qih-telemetry.jsonl
