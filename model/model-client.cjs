@@ -1,15 +1,17 @@
 'use strict';
 
-
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const determinism = require('./determinism-contract.cjs');
 const { googleCloudClient } = require('./google-cloud-client.cjs');
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const DEFAULT_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 30000);
 const DEFAULT_MAX_RETRIES = Number(process.env.GEMINI_MAX_RETRIES || 2);
 
-const PROVIDER_DETERMINISM = Object.freeze({ providerSupportsSeed: false, declaredDeterministic: false });
+const PROVIDER_DETERMINISM = Object.freeze({
+  providerSupportsSeed: false,
+  declaredDeterministic: false
+});
 
 function isRetryable(err) {
   const msg = String(err && err.message || err);
@@ -18,58 +20,96 @@ function isRetryable(err) {
   return false;
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 class ModelClient {
   constructor(config = {}) {
-    this.config = { provider: 'gemini', model: config.model || DEFAULT_MODEL, timeoutMs: config.timeoutMs || DEFAULT_TIMEOUT_MS, maxRetries: config.maxRetries !== undefined ? config.maxRetries : DEFAULT_MAX_RETRIES };
+    this.config = {
+      provider: 'gemini',
+      model: config.model || DEFAULT_MODEL,
+      timeoutMs: config.timeoutMs || DEFAULT_TIMEOUT_MS,
+      maxRetries: config.maxRetries !== undefined ? config.maxRetries : DEFAULT_MAX_RETRIES
+    };
     this.tokens = { in: 0, out: 0 };
+
     if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not set');
     this.client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     this.modelHandle = this.client.getGenerativeModel({ model: this.config.model });
   }
 
   buildContract(overrides = {}) {
-    return determinism.build({ model: this.config.model, temperature: overrides.temperature !== undefined ? overrides.temperature : 0, topP: overrides.topP !== undefined ? overrides.topP : 1, seed: overrides.seed !== undefined ? overrides.seed : null, ...PROVIDER_DETERMINISM });
+    return determinism.build({
+      model: this.config.model,
+      temperature: overrides.temperature !== undefined ? overrides.temperature : 0,
+      topP: overrides.topP !== undefined ? overrides.topP : 1,
+      seed: overrides.seed !== undefined ? overrides.seed : null,
+      ...PROVIDER_DETERMINISM
+    });
   }
 
   async invoke(prompt, overrides = {}) {
     const contract = this.buildContract(overrides);
     const text = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
-    const generationConfig = { temperature: contract.temperature, topP: contract.topP };
+    const generationConfig = {
+      temperature: contract.temperature,
+      topP: contract.topP
+    };
     let lastErr;
+
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
       try {
-        const result = await this.modelHandle.generateContent({ contents: [{ role: 'user', parts: [{ text }] }], generationConfig });
+        const result = await this.modelHandle.generateContent({
+          contents: [{ role: 'user', parts: [{ text }] }],
+          generationConfig
+        });
         const out = result.response.text();
         return { text: out, contract };
-      } catch (e) {
-        lastErr = e;
-        if (attempt < this.config.maxRetries && isRetryable(e)) { await sleep(500 * (attempt + 1)); continue; }
+      } catch (err) {
+        lastErr = err;
+        if (attempt < this.config.maxRetries && isRetryable(err)) {
+          await sleep(500 * (attempt + 1));
+          continue;
+        }
         break;
       }
     }
+
     throw new Error('gemini-invoke-failed: ' + String(lastErr && lastErr.message || lastErr));
   }
 }
 
-let _modelClient = null;
+let cachedClient = null;
+
 function getModelClient() {
-  if (_modelClient) return _modelClient;
-  if (process.env.BRAIN_PROVIDER === 'google-cloud') {
-    _modelClient = googleCloudClient;
+  if (cachedClient) return cachedClient;
+
+  // Google Cloud is the production default. Gemini API-key mode remains
+  // available for explicit local development and compatibility tests.
+  const provider = String(process.env.BRAIN_PROVIDER || 'google-cloud').toLowerCase();
+  if (provider === 'google-cloud' || provider === 'vertex' || provider === 'gcloud') {
+    cachedClient = googleCloudClient;
   } else {
-    _modelClient = new ModelClient();
+    cachedClient = new ModelClient();
   }
-  return _modelClient;
+  return cachedClient;
 }
 
-// Lazy wrapper — reads env at first invoke, allows mock override in tests
+// Lazy wrapper reads environment configuration on first use.
 const modelClient = {
-  get config() { return getModelClient().config; },
-  get tokens() { return getModelClient().tokens; },
-  buildContract(...args) { return getModelClient().buildContract(...args); },
-  async invoke(...args) { return getModelClient().invoke(...args); },
+  get config() {
+    return getModelClient().config;
+  },
+  get tokens() {
+    return getModelClient().tokens;
+  },
+  buildContract(...args) {
+    return getModelClient().buildContract(...args);
+  },
+  async invoke(...args) {
+    return getModelClient().invoke(...args);
+  }
 };
 
 module.exports = { ModelClient, modelClient, getModelClient };

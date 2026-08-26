@@ -19,5 +19,15 @@ module.exports = async ({ test, assert, eq, group }) => {
       assert(p.includes('[MEMORY CONTEXT]'));
       assert(p.includes('fact1'));
     });
+
+    await test('instructs natural full-sentence responses (no terse mode)', () => {
+      const p = build({ userMessage: 'hi' });
+      assert(p.includes('[RESPONSE STYLE]'));
+      assert(!/Presence over narration\. Be\. Do not describe being\./.test(p));
+      assert(/complete sentences/.test(p));
+      assert(/source of truth for factual claims/.test(p));
+      assert(/instead of reconstructing or inventing a history/.test(p));
+      assert(/do not claim memories, experiences, or capabilities/.test(p));
+    });
   });
 };
