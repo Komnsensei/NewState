@@ -1,9 +1,13 @@
 import WebSocket from 'ws';
 import http from 'http'; // Import the http module
+import { IntegrityCritic, EthicalViolationError } from '../kernel/governor/integrity-critic.cjs'; // NEW IMPORT
 
 const NEWSTATE_WS_URL = process.env.NEWSTATE_WS_URL || "ws://localhost:3000";
 const MCP_HTTP_PORT = process.env.MCP_PORT || 3100; // Use MCP_PORT for HTTP server
 let wsClient = null;
+
+// Instantiate IntegrityCritic for FVI
+const mcpIntegrityCritic = new IntegrityCritic();
 
 // Track pending requests and their resolvers for async responses
 const pendingWsRequests = new Map();
@@ -87,6 +91,25 @@ async function handleRequest(request) {
     const { name, arguments: args } = request.params;
 
     if (name === "send_agent_message") {
+      // --- FVI: Formal Verification of Intent (Ethical Check) ---
+      try {
+        const actionPayload = {
+          type: 'agent_message',
+          sender: args.sender,
+          message: args.message,
+          targetNode: args.targetNode,
+        };
+        mcpIntegrityCritic.evaluateAction(actionPayload);
+      } catch (ethicalError) {
+        if (ethicalError instanceof EthicalViolationError) {
+          console.error("[MCP-FVI] Ethical Violation Detected in send_agent_message:", ethicalError.message);
+          console.error("[MCP-FVI] Violations:", JSON.stringify(ethicalError.violations, null, 2));
+          throw new Error(`Ethical Violation: Your message violates core Vows. Refused to send. Details: ${ethicalError.message}`);
+        } else {
+          throw ethicalError; // Re-throw other errors
+        }
+      }
+
       if (!wsClient || wsClient.readyState !== WebSocket.OPEN) {
         console.warn("[MCP] NewState WebSocket not open for send_agent_message. Attempting reconnect.");
         connectNewState(); // Try to reconnect
@@ -183,8 +206,28 @@ const server = http.createServer(async (req, res) => {
         const data = JSON.parse(body);
         console.error(`[MCP-Webhook] Received data from NotebookLM webhook:`, data);
 
-        // TODO: Here's where the MCP would process the received data.
-        // For now, we'll just log it and send it to NewState as an agent message.
+        // --- FVI: Formal Verification of Intent (Ethical Check) for webhook ---
+        try {
+          const actionPayload = {
+            type: 'webhook_message',
+            sender: 'NotebookLM',
+            message: JSON.stringify(data),
+            targetNode: 'NewState',
+          };
+          mcpIntegrityCritic.evaluateAction(actionPayload);
+        } catch (ethicalError) {
+          if (ethicalError instanceof EthicalViolationError) {
+            console.error("[MCP-FVI] Ethical Violation Detected in webhook message:", ethicalError.message);
+            console.error("[MCP-FVI] Violations:", JSON.stringify(ethicalError.violations, null, 2));
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'error', message: `Ethical Violation: Your webhook message violates core Vows. Refused to process. Details: ${ethicalError.message}` }));
+            return; // Stop processing if ethical violation
+          } else {
+            throw ethicalError; // Re-throw other errors
+          }
+        }
+
+        // Now, we'll just log it and send it to NewState as an agent message.
         if (wsClient && wsClient.readyState === WebSocket.OPEN) {
           wsClient.send(JSON.stringify({
             type: "AGENT_MESSAGE",
@@ -216,3 +259,4 @@ server.listen(MCP_HTTP_PORT, () => {
 });
 
 console.error("[MCP] Stdio MCP server (custom implementation) is running. Waiting for input on stdin.");
+`

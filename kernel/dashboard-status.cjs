@@ -63,10 +63,10 @@ function buildStatus() {
 
   const env = {
     geminiKey: !!process.env.GEMINI_API_KEY,
-    geminiModel: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+    geminiModel: process.env.GEMINI_MODEL || process.env.GOOGLE_CLOUD_MODEL || 'gemini-2.5-flash',
     telegramToken: !!process.env.TELEGRAM_BOT_TOKEN,
     replyPath: process.env.ESMA_REPLY_PATH_ENABLED !== 'false',
-    brainProvider: process.env.BRAIN_PROVIDER || 'gemini',
+    brainProvider: process.env.BRAIN_PROVIDER || 'google-cloud',
     newstateHome: PATHS.home,
   };
 
