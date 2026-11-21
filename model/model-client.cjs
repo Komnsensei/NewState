@@ -3,6 +3,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const determinism = require('./determinism-contract.cjs');
 const { googleCloudClient } = require('./google-cloud-client.cjs');
+const { groqClient } = require('./groq-client.cjs');
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const DEFAULT_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 30000);
@@ -87,8 +88,12 @@ function getModelClient() {
 
   // Google Cloud is the production default. Gemini API-key mode remains
   // available for explicit local development and compatibility tests.
+  // Groq (BRAIN_PROVIDER=groq) is the free-tier alternative: it speaks the
+  // OpenAI chat API and needs only GROQ_API_KEY (+ optional GROQ_MODEL).
   const provider = String(process.env.BRAIN_PROVIDER || 'google-cloud').toLowerCase();
-  if (provider === 'google-cloud' || provider === 'vertex' || provider === 'gcloud') {
+  if (provider === 'groq') {
+    cachedClient = groqClient;
+  } else if (provider === 'google-cloud' || provider === 'vertex' || provider === 'gcloud') {
     cachedClient = googleCloudClient;
   } else {
     cachedClient = new ModelClient();
